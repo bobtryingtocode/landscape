@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Landscape — find the home the market isn't showing you</title>
+<meta name="description" content="Research land and homes on and off the market, rate every deal, score how likely an owner is to sell, and build creative offers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F1F4EF;--ink:#16211C;--muted:#5D6B63;--line:#CBD3CC;--pine:#2F5A45;--pine-deep:#1E3D2E;--ochre:#C98F1F;--alert:#B3432B;--white:#fff;--fill:#E3E9E2;--r:10px;--rs:6px;--shadow:0 1px 0 rgba(22,33,28,.06),0 6px 20px rgba(22,33,28,.06)}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Figtree,system-ui,sans-serif;font-size:16px;line-height:1.5}
+h1,h2,h3{margin:0;font-weight:600;line-height:1.15}
+h1{font-family:Fraunces,Georgia,serif;font-size:2.3rem;font-weight:500;letter-spacing:-.01em}
+h2{font-size:1.25rem}h3{font-size:1.02rem}
+p{margin:0 0 .75rem}button{font:inherit;cursor:pointer}a{color:var(--pine)}
+.num{font-family:Fraunces,Georgia,serif;font-weight:500;font-variant-numeric:tabular-nums}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--white);border:1px solid var(--line);border-radius:var(--rs);padding:.55rem .7rem;width:100%;min-height:42px}
+textarea{min-height:120px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--ochre);outline-offset:1px}
+label{display:block;font-size:.88rem;font-weight:500;color:var(--muted);margin-bottom:.3rem}
+.field{margin-bottom:.9rem}.row{display:grid;gap:.8rem;grid-template-columns:1fr 1fr}
+.btn{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--pine);background:var(--pine);color:#fff;border-radius:var(--rs);padding:.6rem 1rem;font-weight:600;min-height:42px;text-decoration:none}
+.btn:hover{background:var(--pine-deep)}.btn.ghost{background:transparent;color:var(--pine)}.btn.ghost:hover{background:var(--fill)}
+.btn.sm{padding:.35rem .7rem;min-height:34px;font-size:.88rem}.btn.warn{background:var(--alert);border-color:var(--alert)}
+.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem}
+.brand{font-family:Fraunces,Georgia,serif;font-size:1.35rem;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem}
+.brand svg{width:26px;height:26px}
+.nav{display:flex;gap:.2rem;margin-left:1rem}
+.nav button{background:none;border:0;padding:.45rem .7rem;border-radius:var(--rs);color:var(--muted);font-weight:500}
+.nav button.on{background:var(--fill);color:var(--ink)}
+.mode{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--white)}
+.mode button{border:0;background:none;padding:.4rem .9rem;color:var(--muted);font-weight:500}
+.mode button.on{background:var(--ink);color:#fff}
+.wrap{max-width:1180px;margin:0 auto;padding:1.4rem 1.2rem 6rem}
+.view{display:none}.view.on{display:block}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow)}
+.grid{display:grid;gap:1rem}
+@media(min-width:900px){.grid.side{grid-template-columns:330px 1fr}.grid.two{grid-template-columns:1fr 1fr}}
+.tag{display:inline-block;font-size:.78rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;background:var(--fill);color:var(--pine-deep)}
+.tag.off{background:#EEF0D8;color:#6B6A1E}.tag.on{background:#DCE8F3;color:#1F4E7A}.tag.demo{background:#F3E9D1;color:#7A5A12}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.hr{border:0;border-top:1px solid var(--line);margin:1rem 0}
+.hero{display:grid;gap:1.5rem;align-items:center;padding:1.5rem 0 2rem}
+@media(min-width:900px){.hero{grid-template-columns:1.1fr .9fr;padding:2.5rem 0 3rem}}
+.hero p.lead{font-size:1.12rem;max-width:34rem;color:#2E3B35}
+.dial{position:relative;width:min(300px,80vw);margin:0 auto}
+.dial svg{width:100%;height:auto;display:block}
+.dial .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.dial .center .num{font-size:4.2rem;line-height:1}
+.bar{display:grid;grid-template-columns:150px 1fr 44px;align-items:center;gap:.7rem;margin:.45rem 0;font-size:.92rem}
+.bar .track{height:8px;background:var(--fill);border-radius:99px;overflow:hidden}
+.bar .fillb{height:100%;background:var(--pine);border-radius:99px}
+.bar .fillb.o{background:var(--ochre)}.bar .fillb.r{background:var(--alert)}
+.bar .v{text-align:right}
+.plist{display:grid;gap:.8rem}
+.pcard{display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;cursor:pointer}
+.pcard:hover{border-color:var(--pine)}
+.ring{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:1.35rem;position:relative}
+.ring i{position:absolute;inset:5px;border-radius:50%;background:var(--white)}
+.ring b{position:relative;font-weight:500}
+.pcard .meta{font-size:.9rem;color:var(--muted)}
+.pcard .right{text-align:right}
+.pcard .right .num{font-size:1.15rem}
+.chip{display:inline-flex;align-items:center;gap:.3rem;border:1px solid var(--line);background:var(--white);border-radius:999px;padding:.25rem .7rem;font-size:.85rem;margin:.15rem .25rem .15rem 0;cursor:pointer}
+.chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.sortbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.6rem 0 1rem}
+.sortbar select{width:auto;min-height:36px;padding:.35rem .6rem}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:.4rem 1rem;font-size:.93rem}
+.kv div span{display:block;color:var(--muted);font-size:.8rem}
+.offer{border:1px solid var(--line);border-left:4px solid var(--ochre);border-radius:var(--rs);padding:.8rem 1rem;margin-bottom:.8rem;background:#FCFCFA}
+.offer h3{margin-bottom:.25rem}.offer .why{font-size:.9rem;color:var(--muted)}
+.offer .terms{font-size:.95rem;margin:.4rem 0}
+.risk{border-left:4px solid var(--alert);background:#FBF4F2;padding:.6rem .9rem;border-radius:var(--rs);margin:.4rem 0;font-size:.92rem}
+.ok{border-left:4px solid var(--pine);background:#F0F5F1;padding:.6rem .9rem;border-radius:var(--rs);margin:.4rem 0;font-size:.92rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:.5rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:500;font-size:.82rem}
+.tblwrap{overflow:auto}
+.letter{white-space:pre-wrap;font-family:Fraunces,Georgia,serif;font-size:1rem;line-height:1.6;background:#FCFCFA;border:1px solid var(--line);padding:1.2rem;border-radius:var(--rs)}
+.toast{position:fixed;left:50%;bottom:5.2rem;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.6rem 1rem;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+.weights input[type=range]{width:100%;min-height:auto;padding:0;border:0}
+.empty{padding:2rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+.steps{display:grid;gap:.9rem}@media(min-width:700px){.steps{grid-template-columns:repeat(3,1fr)}}
+.steps .card h3{margin-bottom:.3rem}
+.mnav{display:none}
+@media(max-width:899px){
+ .nav{display:none}.mode{margin-left:auto}
+ .mnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--line);z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+ .mnav button{border:0;background:none;padding:.55rem .2rem .5rem;font-size:.72rem;color:var(--muted);display:grid;justify-items:center;gap:.15rem;font-weight:500}
+ .mnav button svg{width:22px;height:22px}.mnav button.on{color:var(--pine)}
+ .pcard{grid-template-columns:auto 1fr}.pcard .right{grid-column:2;text-align:left}
+ .bar{grid-template-columns:110px 1fr 40px}.kv{grid-template-columns:1fr 1fr}
+ .row{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{.top,.mnav,.noprint{display:none!important}.wrap{padding:0}}
+</style>
+<script>window.LS_CONFIG={supabaseUrl:"https://glhdrtscwjnfwbzyquii.supabase.co",supabaseAnonKey:"sb_publishable_8trlTktUrUBK_5nn3q5EPA_VyO2XpG4"};</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<header class="top">
+ <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 20l6-14 4 8 3-5 5 11z"/><path d="M3 20h18"/></svg>Landscape</div>
+ <nav class="nav" aria-label="Sections">
+  <button data-go="home" class="on">Start</button><button data-go="search">Search</button><button data-go="results">Parcels</button><button data-go="compare">Compare</button><button data-go="data">Data</button>
+ </nav>
+ <div class="mode" role="group" aria-label="Mode"><button id="modeBuyer" class="on">Buyer</button><button id="modeAgent">Agent</button></div>
+</header>
+
+<main class="wrap">
+
+<section id="v-home" class="view on">
+ <div class="hero">
+  <div>
+   <h1>Find the home the market isn't showing you.</h1>
+   <p class="lead">Landscape rates every property on how good the deal really is, scores how likely a private owner is to sell, and drafts offers that go beyond the asking price — so first-time and move-up buyers stop overpaying, and agents find deals before they hit the MLS.</p>
+   <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem">
+    <button class="btn" data-go="search">Set up my search</button>
+    <button class="btn ghost" id="loadDemo">Try it with demo data</button>
+   </div>
+   <p class="small muted" style="margin-top:.8rem">Works for any US town. Your data stays in this browser until you export it.</p>
+  </div>
+  <div class="dial" id="heroDial"></div>
+ </div>
+ <div class="steps">
+  <div class="card"><h3>1. Describe what you need</h3><p class="small muted">Town, budget, acreage, size of home, must-haves. Same parameters Land Scout uses, plus a few for houses.</p></div>
+  <div class="card"><h3>2. Bring in properties</h3><p class="small muted">Paste listings and town-record parcels (owner, acquisition date, assessed value). Every row gets a deal score and a seller-likelihood score.</p></div>
+  <div class="card"><h3>3. Make a smarter offer</h3><p class="small muted">Compare against market comps, see where the ask is inflated, and pick a creative structure — seller financing, option, lease-purchase, and more.</p></div>
+ </div>
+</section>
+
+<section id="v-search" class="view">
+ <div class="grid side">
+  <div class="card">
+   <h2>Search box</h2>
+   <p class="small muted">These filters and weights drive every score.</p>
+   <div class="field"><label>Town / city</label><input id="f-town" placeholder="Londonderry"></div>
+   <div class="row"><div class="field"><label>State</label><input id="f-state" placeholder="NH" maxlength="2"></div><div class="field"><label>Looking for</label><select id="f-type"><option value="both">Land and homes</option><option value="land">Land only</option><option value="home">Homes only</option></select></div></div>
+   <div class="row"><div class="field"><label>Max budget ($)</label><input id="f-budget" type="number" placeholder="600000"></div><div class="field"><label>Max down payment ($)</label><input id="f-down" type="number" placeholder="60000"></div></div>
+   <div class="row"><div class="field"><label>Min acres</label><input id="f-minac" type="number" step="0.1" placeholder="1"></div><div class="field"><label>Max acres</label><input id="f-maxac" type="number" step="0.1" placeholder="8"></div></div>
+   <div class="row"><div class="field"><label>Min bedrooms (homes)</label><input id="f-beds" type="number" placeholder="4"></div><div class="field"><label>Min sq ft (homes)</label><input id="f-sqft" type="number" placeholder="2500"></div></div>
+   <div class="field"><label>Must-haves</label>
+    <div id="musts">
+     <span class="chip" data-m="paved">Paved public road</span><span class="chip" data-m="nowet">No wetlands</span><span class="chip" data-m="util">Utilities at road</span><span class="chip" data-m="res">Residential zoning</span><span class="chip" data-m="private">Private / secluded</span>
+    </div></div>
+   <hr class="hr">
+   <h3>Market comps for this town</h3>
+   <p class="small muted">Used when a property has no comp of its own. Get these from recent sales (Zillow sold, MLS, or the town's sales list).</p>
+   <div class="row"><div class="field"><label>Land: $ per acre</label><input id="f-ppa" type="number" placeholder="85000"></div><div class="field"><label>Homes: $ per sq ft</label><input id="f-ppsf" type="number" placeholder="310"></div></div>
+   <div class="field"><label>Assessment ratio (market ÷ assessed)</label><input id="f-ratio" type="number" step="0.01" placeholder="1.15"><span class="small muted">Towns publish this. 1.15 means homes sell ~15% above assessed.</span></div>
+   <button class="btn" id="saveSearch">Save and score parcels</button>
+  </div>
+  <div>
+   <div class="card weights">
+    <h2>How the deal score is weighted</h2>
+    <p class="small muted">Land Scout defaults shown. Drag to match what matters to you — they always total 100.</p>
+    <div id="weights"></div>
+   </div>
+   <div class="card" style="margin-top:1rem">
+    <h2>Where the data comes from</h2>
+    <p class="small">Landscape scores whatever you give it. For any town, the same three public sources exist:</p>
+    <div class="tblwrap"><table><tr><th>Source</th><th>What it gives you</th><th>Where</th></tr>
+    <tr><td>Town assessor / GIS parcel viewer</td><td>Every parcel: owner, mailing address, acreage, assessed land and building value, land-use code, deed date and price</td><td>Search "[town] assessor database" or "[town] GIS". NH towns mostly use Vision (VGSI) or AxisGIS.</td></tr>
+    <tr><td>State GIS layers</td><td>Wetlands, conservation land, zoning, flood zones</td><td>NH GRANIT, MassGIS, CT OPM — every state has one</td></tr>
+    <tr><td>Listings and sold comps</td><td>Ask prices, days on market, recent sale prices</td><td>Zillow, Realtor.com, Redfin, LandWatch, MLS</td></tr></table></div>
+    <p class="small muted" style="margin-top:.7rem">Paste any of it on the Data tab. Owner details are public record and are for a purchase inquiry only.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section id="v-results" class="view">
+ <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline;justify-content:space-between">
+  <div><h2 id="resTitle">Parcels</h2><p class="small muted" id="resSub"></p></div>
+  <div><button class="btn ghost sm" data-go="data">Add properties</button> <button class="btn ghost sm" id="exportAll">Export CSV</button></div>
+ </div>
+ <div class="sortbar noprint">
+  <select id="sortBy"><option value="deal">Best deal first</option><option value="sell">Most likely to sell</option><option value="combo">Deal × likely to sell</option><option value="price">Lowest price</option><option value="acres">Most acres</option><option value="disc">Biggest discount to market</option></select>
+  <span class="chip on" data-src="all">All</span><span class="chip" data-src="off">Off-market</span><span class="chip" data-src="on">Listed</span><span class="chip" data-src="short">Shortlist</span>
+ </div>
+ <div id="plist" class="plist"></div>
+</section>
+
+<section id="v-detail" class="view"><div id="detail"></div></section>
+
+<section id="v-compare" class="view">
+ <h2>Compare shortlist</h2>
+ <p class="small muted">Tap Save on any parcel to add it here. Export for a client or a lender.</p>
+ <div id="compare"></div>
+</section>
+
+<section id="v-data" class="view">
+ <div class="grid two">
+  <div class="card">
+   <h2>Add one property</h2>
+   <p class="small muted">Fill what you know. Unknowns are scored conservatively and flagged, never assumed.</p>
+   <div class="field"><label>Address or map/lot</label><input id="a-addr" placeholder="244 Mammoth Rd or Map 12 Lot 45"></div>
+   <div class="row"><div class="field"><label>Town</label><input id="a-town"></div><div class="field"><label>Status</label><select id="a-listed"><option value="off">Off-market (town record)</option><option value="on">Listed for sale</option></select></div></div>
+   <div class="row"><div class="field"><label>Acres</label><input id="a-acres" type="number" step="0.01"></div><div class="field"><label>Ask price ($, if listed)</label><input id="a-ask" type="number"></div></div>
+   <div class="row"><div class="field"><label>Assessed land ($)</label><input id="a-aland" type="number"></div><div class="field"><label>Assessed total ($)</label><input id="a-atotal" type="number"></div></div>
+   <div class="row"><div class="field"><label>Home sq ft (0 = land)</label><input id="a-sqft" type="number"></div><div class="field"><label>Bedrooms</label><input id="a-beds" type="number"></div></div>
+   <div class="row"><div class="field"><label>Zoning</label><select id="a-zone"><option value="res">Residential</option><option value="agres">Agricultural-residential</option><option value="rural">Rural / mixed</option><option value="com">Commercial / other</option><option value="">Unknown</option></select></div><div class="field"><label>Wetlands</label><select id="a-wet"><option value="none">None mapped</option><option value="partial">Partial</option><option value="major">Major / mostly wet</option><option value="">Unknown</option></select></div></div>
+   <div class="row"><div class="field"><label>Utilities</label><select id="a-util"><option value="public">Public water and sewer</option><option value="wellseptic">Well and septic approved</option><option value="wellunk">Well/septic likely, untested</option><option value="none">None nearby</option><option value="">Unknown</option></select></div><div class="field"><label>Road access</label><select id="a-road"><option value="paved">Public paved road</option><option value="gravel">Public gravel road</option><option value="private">Private maintained road</option><option value="easement">Easement / right-of-way only</option><option value="landlocked">Landlocked</option><option value="">Unknown</option></select></div></div>
+   <div class="row"><div class="field"><label>Conservation / current use</label><select id="a-cons"><option value="no">No</option><option value="currentuse">Current use (penalty to withdraw)</option><option value="easement">Conservation easement</option></select></div><div class="field"><label>Days on market (if listed)</label><input id="a-dom" type="number"></div></div>
+   <hr class="hr"><h3>Owner (from town records)</h3>
+   <div class="row"><div class="field"><label>Owner name</label><input id="a-owner"></div><div class="field"><label>Owner mailing town/state</label><input id="a-mail" placeholder="Henrico VA"></div></div>
+   <div class="row"><div class="field"><label>Year acquired</label><input id="a-year" type="number"></div><div class="field"><label>Price paid ($, 0 if none)</label><input id="a-paid" type="number"></div></div>
+   <div class="row"><div class="field"><label>How acquired</label><select id="a-how"><option value="purchase">Purchase</option><option value="inherit">Inheritance / estate</option><option value="trust">Transferred into trust</option><option value="family">Family transfer ($0 deed)</option><option value="llc">LLC / investor</option><option value="">Unknown</option></select></div><div class="field"><label>Tax status</label><select id="a-tax"><option value="current">Current</option><option value="late">Delinquent / lien</option><option value="">Unknown</option></select></div></div>
+   <div class="field"><label>Notes</label><input id="a-notes" placeholder="Rear lot, neighbor-held, seller mentioned retiring…"></div>
+   <button class="btn" id="addOne">Add property</button>
+  </div>
+  <div>
+   <div class="card" id="liveCard">
+    <h2 style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">Pull live records <span id="connPill" class="small" style="font-weight:500;padding:.15rem .55rem;border-radius:999px;background:var(--line,#eee)">Checking connection…</span></h2>
+    <p class="small muted">Fills your list straight from public sources. New Hampshire pulls are free. For any other U.S. county, use <b>Find candidates nationwide</b> below.</p>
+    <div class="row"><div class="field"><label>Town</label><input id="l-town" placeholder="Londonderry"></div><div class="field"><label>State</label><input id="l-state" placeholder="NH" maxlength="2"></div></div>
+    <div class="row"><div class="field"><label>Parcel types</label><select id="l-types"><option value="22">Vacant residential land</option><option value="22,11">Vacant land and single-family homes</option><option value="11">Single-family homes</option><option value="22,23,24">All vacant land (incl. commercial)</option></select></div><div class="field"><label>Min acres</label><input id="l-minac" type="number" step="0.1" placeholder="2"></div></div>
+    <div class="field"><label>Listings page link (optional, for step 3)</label><input id="l-listurl" placeholder="Paste a LandWatch, Realtor.com or brokerage search page for this town"></div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem"><button class="btn" id="pullAll">Pull everything</button><button class="btn ghost" id="pullGranit">1. Pull parcels (NH GRANIT)</button><button class="btn ghost" id="pullVgsi">2. Add owner records (assessor)</button><button class="btn ghost" id="pullListings">3. Add listings (from a listings page)</button></div>
+    <div class="small" id="liveStatus" style="min-height:1.4em"></div>
+    <div style="margin-top:.5rem"><button class="btn ghost small" id="checkConn" type="button" style="display:none">Re-check connection</button><pre id="connOut" class="small" style="white-space:pre-wrap;margin:.4rem 0 0;padding:.5rem;border:1px solid var(--line,#ddd);border-radius:8px;display:none"></pre></div>
+    <details class="small muted" style="margin-top:.5rem"><summary>How this works</summary><p style="margin-top:.5rem">Step 1 reads the state parcel map (every lot, address, land-use code, acreage). Step 2 opens each parcel's town assessor card for owner name, mailing address, assessed values, sale history and building details — it runs about one card per second, so pull a focused set. Step 3 reads any listings page you paste (LandWatch, Realtor.com, a brokerage search) and merges the address + asking price into your list, so an off-market parcel that goes on sale shows both records. Owner details are public record; use them for a purchase inquiry only.</p><p>Advanced: server address <input id="l-api" placeholder="leave blank when using the hosted app" style="min-height:32px;padding:.3rem .5rem"></p></details>
+   </div>
+   <div class="card" style="margin-top:1rem" id="nationCard">
+    <h2 style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">Find candidates nationwide <span id="creditPill" class="small" style="font-weight:500;padding:.15rem .55rem;border-radius:999px;background:var(--line,#eee)">Sign in to see credits</span></h2>
+    <p class="small muted">Owner name, mailing address, acreage, assessed value and last sale for parcels in any U.S. county. 1 credit = 1 parcel record. Results are scored and ranked the moment they land.</p>
+    <div class="row"><div class="field"><label>State</label><input id="n-state" placeholder="TX" maxlength="2"></div><div class="field"><label>County</label><input id="n-county" placeholder="Travis"></div></div>
+    <div class="row"><div class="field"><label>City or town (optional)</label><input id="n-city" placeholder="Leave blank for the whole county"></div><div class="field"><label>Land type</label><select id="n-use"><option value="vacant">Vacant land</option><option value="farm_forest">Farm, forest, open land</option><option value="single_family">Single-family homes</option><option value="residential">All residential</option><option value="commercial">Commercial</option><option value="any">Anything</option></select></div></div>
+    <div class="row"><div class="field"><label>Min acres</label><input id="n-minac" type="number" step="0.5" placeholder="2"></div><div class="field"><label>Max acres (optional)</label><input id="n-maxac" type="number" step="1" placeholder=""></div></div>
+    <div class="row"><div class="field"><label>How many candidates</label><select id="n-count"><option value="20">20 (20 credits)</option><option value="40">40 (40 credits)</option><option value="100">100 (100 credits)</option></select></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="findNation" style="width:100%">Find candidates</button></div></div>
+    <div class="small" id="nationStatus" style="min-height:1.4em"></div>
+   </div>
+   <div class="card" style="margin-top:1rem" id="acctCard">
+    <h2>Account &amp; credits</h2>
+    <div id="acctOut"><div class="row"><div class="field"><label>Email</label><input id="acct-email" type="email" placeholder="you@example.com"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="acctSend" style="width:100%">Email me a sign-in link</button></div></div><p class="small muted">No password. Tap the link in the email and you are in.</p></div>
+    <div id="acctIn" style="display:none">
+     <p class="small">Signed in as <b id="acct-who"></b> · <span id="acct-plan"></span> · <b id="acct-credits"></b> credits <button class="btn ghost small" id="acctOutBtn" type="button">Sign out</button></p>
+     <div class="small muted" style="margin:.4rem 0">Pay as you go</div>
+     <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn ghost buy" data-sku="pack20">20 credits · $5</button><button class="btn ghost buy" data-sku="pack40">40 credits · $10</button><button class="btn ghost buy" data-sku="pack100">100 credits · $25</button></div>
+     <div class="small muted" style="margin:.6rem 0 .4rem">Monthly plans (credits refill each month)</div>
+     <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn buy" data-sku="starter">Starter · 100/mo · $20</button><button class="btn buy" data-sku="pro">Pro · 220/mo · $40</button><button class="btn buy" data-sku="max">Max · 360/mo · $60</button><button class="btn ghost" id="acctPortal" type="button" style="display:none">Manage subscription</button></div>
+     <div class="small" id="acctStatus" style="min-height:1.2em;margin-top:.4rem"></div>
+    </div>
+   </div>
+   <div class="card" style="margin-top:1rem">
+    <h2>Paste many at once</h2>
+    <p class="small">Paste a CSV export from a spreadsheet, an assessor download, or a listing scrape. First row must be headers. Landscape matches these column names (any order, extras ignored):</p>
+    <p class="small muted" style="line-height:1.7"><code>address, town, listed (yes/no), acres, ask, assessed_land, assessed_total, sqft, beds, zoning, wetlands, utilities, road, conservation, dom, owner, owner_mail, year_acquired, price_paid, how_acquired, tax, notes, comp_ppa, comp_ppsf</code></p>
+    <textarea id="csv" placeholder="address,town,listed,acres,ask,assessed_land,assessed_total,owner,owner_mail,year_acquired,price_paid,how_acquired"></textarea>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem"><button class="btn" id="importCsv">Import rows</button><button class="btn ghost" id="dlTemplate">Download template</button></div>
+   </div>
+   <div class="card" style="margin-top:1rem">
+    <h2>Your properties</h2>
+    <p class="small muted"><span id="countTxt">0 saved</span></p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn ghost sm" id="loadDemo2">Load demo set</button><button class="btn ghost sm" id="backupBtn">Back up (JSON)</button><label class="btn ghost sm" style="margin:0">Restore<input type="file" id="restoreFile" accept=".json" hidden></label><button class="btn warn sm" id="clearAll">Clear all</button></div>
+   </div>
+   <div class="card" style="margin-top:1rem" id="agentBox">
+    <h2>Your details</h2>
+    <p class="small muted">Used on outreach letters and exports.</p>
+    <div class="row"><div class="field"><label>Your name</label><input id="s-name"></div><div class="field"><label>Brokerage (agents)</label><input id="s-brok"></div></div>
+    <div class="row"><div class="field"><label>Phone</label><input id="s-phone"></div><div class="field"><label>Email</label><input id="s-email"></div></div>
+    <div class="field"><label>Mailing address</label><input id="s-addr"></div>
+    <div class="field"><label>Client description (agents, optional)</label><input id="s-client" placeholder="a young family relocating for work"></div>
+    <button class="btn sm" id="saveSettings">Save</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+</main>
+
+<nav class="mnav" aria-label="Sections">
+ <button data-go="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10H3z"/></svg>Start</button>
+ <button data-go="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>Search</button>
+ <button data-go="results"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Parcels</button>
+ <button data-go="compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V9M12 20V4M20 20v-7"/></svg>Compare</button>
+ <button data-go="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Data</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const KEY='landscape.v1';
+const DEFAULT={mode:'buyer',search:{town:'',state:'',type:'both',budget:0,down:0,minac:0,maxac:0,beds:0,sqft:0,musts:[],ppa:0,ppsf:0,ratio:1},weights:{price:25,build:25,util:20,access:20,acres:10},settings:{name:'',brok:'',phone:'',email:'',addr:'',client:''},parcels:[],shortlist:[],sort:'deal',src:'all'};
+let S=load();
+function load(){try{const j=JSON.parse(localStorage.getItem(KEY));return j?Object.assign({},DEFAULT,j,{search:Object.assign({},DEFAULT.search,j.search),weights:Object.assign({},DEFAULT.weights,j.weights),settings:Object.assign({},DEFAULT.settings,j.settings)}):JSON.parse(JSON.stringify(DEFAULT))}catch(e){return JSON.parse(JSON.stringify(DEFAULT))}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200)}
+const fmt=n=>n==null||isNaN(n)?'—':'$'+Math.round(n).toLocaleString();
+const fmtK=n=>n==null||isNaN(n)?'—':n>=1e6?'$'+(n/1e6).toFixed(2)+'M':'$'+Math.round(n/1e3)+'K';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const YEAR=new Date().getFullYear();
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+/* ---------- SCORING ---------- */
+function marketValue(p){
+ const s=S.search;const home=(p.sqft||0)>0;
+ if(p.comp_ppsf&&home)return {v:p.comp_ppsf*p.sqft,basis:'your comp $/sq ft'};
+ if(p.comp_ppa&&!home)return {v:p.comp_ppa*p.acres,basis:'your comp $/acre'};
+ if(home&&s.ppsf)return {v:s.ppsf*p.sqft+(s.ppa?s.ppa*Math.max(0,(p.acres||0)-1)*0.4:0),basis:'town $/sq ft comp'};
+ if(!home&&s.ppa&&p.acres)return {v:s.ppa*p.acres,basis:'town $/acre comp'};
+ if(p.assessed_total)return {v:p.assessed_total*(s.ratio||1),basis:'assessed × ratio'};
+ if(p.ask)return {v:p.ask,basis:'ask (no comp)'};
+ return {v:0,basis:'unknown'};
+}
+function targetPrice(p){
+ if(p.listed&&p.ask)return p.ask;
+ return marketValue(p).v||p.assessed_total*(S.search.ratio||1)||0;
+}
+function dealScore(p){
+ const s=S.search,w=S.weights,home=(p.sqft||0)>0;const mv=marketValue(p),price=targetPrice(p);const sub={},flags=[];
+ if(price&&mv.v&&mv.basis!=='ask (no comp)'){const r=price/mv.v;sub.price=clamp(Math.round(r<=.8?100:r>=1.35?5:100-(r-.8)*173),5,100);if(r>1.1)flags.push('Ask is '+Math.round((r-1)*100)+'% above market estimate ('+mv.basis+')');if(p.assessed_total&&price<p.assessed_total)sub.price=clamp(sub.price+8,0,100);}
+ else{sub.price=45;flags.push('No market comp — enter $/acre or $/sq ft on Search to rate price')}
+ if(!home&&mv.basis==='assessed × ratio'&&p.acres>=1&&p.assessed_total/p.acres<15000){sub.price=45;flags.push('Assessed at '+fmt(p.assessed_total/p.acres)+'/acre — looks like current-use land, not market value. Enter a town $/acre comp on Search.')}
+ if(s.budget&&price>s.budget){sub.price=Math.round(sub.price*.6);flags.push('Over your budget by '+fmt(price-s.budget))}
+ let b=50;if(p.zoning==='res')b=90;else if(p.zoning==='agres')b=85;else if(p.zoning==='rural')b=75;else if(p.zoning==='com')b=30;else flags.push('Zoning unknown — verify with town');
+ if(p.wetlands==='none')b+=10;else if(p.wetlands==='partial'){b-=25;flags.push('Partial wetlands mapped — verify buildable envelope')}else if(p.wetlands==='major'){b-=55;flags.push('Mostly wetland — likely unbuildable')}else{b-=10;flags.push('Wetlands unknown — check state GIS layer')}
+ if(p.conservation==='easement'){b-=60;flags.push('Conservation easement — building likely prohibited')}else if(p.conservation==='currentuse'){b-=10;flags.push('Current use — land-use change tax (typically 10% of value) due on withdrawal')}
+ if(home)b=Math.max(b,70);sub.build=clamp(b,0,100);
+ const um={public:100,wellseptic:85,wellunk:50,none:15};sub.util=um[p.utilities]??40;if(!p.utilities)flags.push('Utilities unknown — perc test / hookup unverified');if(p.utilities==='wellunk'&&!home)flags.push('Septic untested — make offer contingent on perc test');
+ const rm={paved:100,gravel:82,private:60,easement:35,landlocked:5};sub.access=rm[p.road]??40;if(p.road==='easement')flags.push('Easement-only access — title and maintenance risk');if(p.road==='landlocked')flags.push('Landlocked — no legal access without an easement');if(!p.road)flags.push('Road access unknown');
+ let a=70;if(s.minac||s.maxac){const lo=s.minac||0,hi=s.maxac||1e9;if(p.acres>=lo&&p.acres<=hi)a=100;else{const d=p.acres<lo?(lo-p.acres)/Math.max(lo,.5):(p.acres-hi)/Math.max(hi,1);a=clamp(Math.round(100-d*120),15,100)}}
+ if(home){if(s.beds&&p.beds<s.beds){a-=25;flags.push('Fewer bedrooms than you need')}if(s.sqft&&p.sqft<s.sqft){a-=20;flags.push('Smaller than your target size')}}
+ sub.acres=clamp(a,0,100);
+ const m=s.musts||[];if(m.includes('paved')&&p.road!=='paved')flags.push('Must-have missed: paved public road');if(m.includes('nowet')&&p.wetlands!=='none')flags.push('Must-have missed: no wetlands');if(m.includes('util')&&!['public','wellseptic'].includes(p.utilities))flags.push('Must-have missed: utilities');if(m.includes('res')&&!['res','agres'].includes(p.zoning))flags.push('Must-have missed: residential zoning');if(m.includes('private')&&(p.acres||0)<2)flags.push('Must-have missed: privacy (under 2 acres)');
+ const tw=w.price+w.build+w.util+w.access+w.acres||100;
+ const total=Math.round((sub.price*w.price+sub.build*w.build+sub.util*w.util+sub.access*w.access+sub.acres*w.acres)/tw);
+ return {total,sub,flags,mv,price};
+}
+function sellScore(p){
+ if(p.listed)return {total:100,why:['Already listed for sale']};
+ let s=20;const why=[];const held=p.year_acquired?YEAR-p.year_acquired:null;const home=(p.sqft||0)>0;
+ if(held!=null){if(held>=30){s+=25;why.push('Held '+held+' years — long tenure, often life-stage sellers')}else if(held>=15){s+=15;why.push('Held '+held+' years')}else if(held<3){s-=15;why.push('Bought recently — usually not a seller')}}
+ else why.push('Acquisition year unknown');
+ const absentee=typeof p.absentee==='boolean'?p.absentee:(p.owner_mail&&p.town&&!p.owner_mail.toLowerCase().includes(p.town.toLowerCase()));if(absentee){s+=20;why.push('Absentee owner (mails to '+p.owner_mail+')')}
+ if(p.how_acquired==='inherit'){s+=20;why.push('Inherited — heirs frequently sell')}else if(p.how_acquired==='trust'){s+=12;why.push('Held in trust — estate planning stage')}else if(p.how_acquired==='family'){s+=8;why.push('Family transfer')}else if(p.how_acquired==='llc'){s+=15;why.push('LLC/investor owner — sells when the price works')}
+ if(!home){s+=10;why.push('Vacant land — no one has to move')}
+ const mv=marketValue(p).v;if(p.price_paid!=null&&mv&&p.price_paid<mv*.4){s+=10;why.push('Low cost basis — large equity, installment sale is attractive')}
+ if(p.tax==='late'){s+=15;why.push('Tax delinquency — motivated or distressed')}
+ if(p.acres>=5&&!home){s+=5;why.push('Large parcel — carrying cost and subdivision interest')}
+ return {total:clamp(Math.round(s),0,100),why};
+}
+function score(p){const d=dealScore(p),sl=sellScore(p);return {d,sl,combo:Math.round(d.total*.6+sl.total*.4)}}
+function verdict(t){return t>=80?'Strong deal':t>=65?'Good deal':t>=50?'Fair — negotiate':t>=35?'Weak':'Pass'}
+function col(t){return t>=65?'var(--pine)':t>=45?'var(--ochre)':'var(--alert)'}
+
+/* ---------- OFFERS ---------- */
+function offers(p){
+ const s=S.search,{d,sl}=score(p),mv=d.mv.v||d.price,price=d.price,home=(p.sqft||0)>0,held=p.year_acquired?YEAR-p.year_acquired:0;const out=[];
+ const low=Math.round(mv*.85/1000)*1000,mid=Math.round(mv*.93/1000)*1000;
+ if(p.listed){
+  const dom=p.dom||0;const cut=dom>90?.9:dom>45?.94:.97;
+  out.push({t:'Straight offer with a data letter',why:'Anchor below ask with the comps that justify it. '+(dom>45?'At '+dom+' days on market the seller has already lost leverage.':'Fresh listing — expect a counter.'),terms:'Offer '+fmt(Math.round(price*cut/1000)*1000)+' ('+Math.round((1-cut)*100)+'% under ask). Attach a one-page comp sheet from Landscape. Ask for seller-paid closing costs if they hold firm on price.'});
+  if(d.mv.basis!=='ask (no comp)'&&price>mv*1.05)out.push({t:'Appraisal-gap protection',why:'The ask is above what comps support, so the lender\'s appraisal may come in low. Make that the seller\'s problem, not yours.',terms:'Offer near ask but require the price to drop to appraised value if the appraisal is below contract. Do not waive the appraisal contingency.'});
+  if(dom>60)out.push({t:'Price-drop trigger',why:'Long-sitting listings often drop price on a schedule. Get ahead of it.',terms:'Submit at '+fmt(low)+' with a note that you will re-offer at any future reduced price minus 3% — you become the first call when they cut.'});
+ }else{
+  out.push({t:'Direct purchase at a fair number',why:'No listing means no commission (5–6%) and no bidding war. Split that savings with the owner.',terms:'Open at '+fmt(low)+', ceiling '+fmt(mid)+'. Reference assessed value '+fmt(p.assessed_total)+'. Offer to cover the owner\'s attorney fee and transfer tax.'});
+ }
+ if(held>=15||p.how_acquired==='inherit'||p.how_acquired==='trust'||(p.price_paid!=null&&p.price_paid<mv*.4)){
+  const dp=s.down||Math.round(mv*.1);const rate=5.5;const bal=mv*.95-dp;const pmt=bal*(rate/1200)/(1-Math.pow(1+rate/1200,-360));
+  out.push({t:'Seller financing (installment sale)',why:'Long-held owners face a big capital-gains bill on a cash sale. Spreading payments over years spreads the tax, and they earn interest instead of a bank.',terms:'Price '+fmt(Math.round(mv*.95/1000)*1000)+', '+fmt(dp)+' down, seller carries '+fmt(bal)+' at '+rate+'% amortized 30 years, balloon in 7. Payment ≈ '+fmt(pmt)+'/mo. Owner keeps a first mortgage until paid.'});
+ }
+ if(!home&&(p.acres||0)>=3)out.push({t:'Option to purchase with a due-diligence window',why:'You can\'t know if the lot percs or the town will approve until you spend money on tests. An option lets you spend it without owning a problem.',terms:'Pay '+fmt(Math.round(mv*.01/500)*500)+' for a 120-day option at '+fmt(mid)+'. Option fee credited at closing. You run the perc test, wetland delineation, and driveway permit before you commit.'});
+ if(!home&&(p.acres||0)>=6)out.push({t:'Buy the piece you need, they keep the rest',why:'Owners who won\'t sell the whole farm will often sell a back lot. A subdivision gives them cash and keeps their house.',terms:'Contract for a '+Math.min(3,Math.floor(p.acres/2))+'-acre lot at '+fmt(Math.round(mv/p.acres*Math.min(3,Math.floor(p.acres/2))*1.1/1000)*1000)+', contingent on subdivision approval. You pay the survey and application; they keep the frontage.'});
+ if(sl.total<55&&!p.listed)out.push({t:'Right of first refusal',why:'Not ready to sell today. Lock in that you\'re first in line, for almost nothing.',terms:'Offer a small annual payment ('+fmt(Math.round(mv*.002/100)*100)+') for a recorded right of first refusal, plus a standing offer at '+fmt(mid)+' good for 3 years.'});
+ if(home){
+  out.push({t:'Lease-purchase (rent-to-own)',why:'Lets you move in now while building the down payment, and gives the owner income before they cash out. Common when the owner is downsizing but not in a hurry.',terms:'Lease 24 months at market rent with '+fmt(Math.round(mv*.004/50)*50)+'/mo credited toward purchase at '+fmt(Math.round(mv*.97/1000)*1000)+'. Option fee 2% of price, credited at closing.'});
+  if(held>=20)out.push({t:'Sell and stay (rent-back)',why:'Owners who\'ve been there decades often need time to leave. Offering 3–6 months of free or cheap rent-back wins against higher cash offers.',terms:'Full-price offer at '+fmt(Math.round(mv*.97/1000)*1000)+' with a 120-day rent-back at $1. Close on your timeline, they move on theirs.'});
+ }
+ if(p.how_acquired==='llc'&&held<3)out.push({t:'Take it off the investor\'s hands',why:'A recent LLC purchase is usually a subdivision or flip play. If it stalled, they want their money back plus a small return.',terms:'Offer their purchase price '+fmt(p.price_paid)+' plus 8–12% and their documented carrying costs. Ask for their survey and engineering — it saves you months.'});
+ if(p.tax==='late')out.push({t:'Cure the tax lien at closing',why:'Delinquent taxes mean the town could take the property. A clean, quick close that pays the town is often worth more to the owner than a higher price later.',terms:'Cash offer at '+fmt(low)+', 30-day close, taxes and lien paid from proceeds at closing. No contingencies except title.'});
+ return out;
+}
+function letter(p){
+ const st=S.settings,agent=S.mode==='agent';const who=agent?(st.client||'a client of mine'):'my family';
+ const l=[];l.push((st.name||'[Your name]')+'\n'+(st.addr||'[Your address]')+'\n'+(st.phone||'[Phone]')+(st.email?' · '+st.email:'')+'\n\n'+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'\n\n'+(p.owner||'Property Owner')+'\n'+(p.owner_mail||'')+'\n\nRe: '+p.address+', '+(p.town||'')+'\n\nDear '+(p.owner?p.owner.split(',')[0].trim():'Property Owner')+',');
+ l.push(agent?'I am a real estate agent working with '+who+' who is looking to buy in '+(p.town||'your town')+'. Your property at '+p.address+' fits what they need, and I wanted to ask directly, before it ever reaches the open market, whether you would consider selling.':'I am writing about your property at '+p.address+'. '+who.charAt(0).toUpperCase()+who.slice(1)+' has been looking for a place in '+(p.town||'your town')+' for some time, and yours is exactly the kind of property we hope to find. I wanted to ask directly whether you would consider selling.');
+ l.push('I know this may not be something you have thought about. There is no listing, no agent commission to pay, and no pressure. If it is of any interest, I would be glad to talk through what would work for you — including a longer closing, staying in the home for a while after the sale, or a payment plan over time if that suits your situation better than a lump sum.');
+ l.push('If the answer is no, I appreciate you reading this and I will not follow up again. If it is a maybe, a quick call or note is all it takes.');
+ l.push('With respect,\n\n'+(st.name||'[Your name]')+(agent&&st.brok?'\n'+st.brok:''));
+ return l.join('\n\n');
+}
+
+/* ---------- DEMO (illustrative, not real records) ---------- */
+function demo(){
+ const t='Londonderry';return [
+ {address:'Lot 3 Old Mill Rd',town:t,listed:false,acres:7.9,assessed_land:168000,assessed_total:168000,sqft:0,beds:0,zoning:'agres',wetlands:'partial',utilities:'wellunk',road:'paved',conservation:'no',owner:'M. Hale',owner_mail:'Richmond VA',year_acquired:1993,price_paid:41000,how_acquired:'purchase',tax:'current',notes:'Absentee owner, held 30+ years'},
+ {address:'Rear lot, 27 Birch Ln',town:t,listed:false,acres:2.85,assessed_land:96000,assessed_total:96000,sqft:0,beds:0,zoning:'res',wetlands:'none',utilities:'wellunk',road:'easement',conservation:'no',owner:'Young Family Trust',owner_mail:'Londonderry NH',year_acquired:1973,price_paid:0,how_acquired:'trust',tax:'current',notes:'Access by easement over front lot'},
+ {address:'17 Kimball Rd',town:t,listed:false,acres:7.5,assessed_land:210000,assessed_total:210000,sqft:0,beds:0,zoning:'res',wetlands:'none',utilities:'wellunk',road:'paved',conservation:'no',owner:'Granite Ridge Holdings LLC',owner_mail:'North Andover MA',year_acquired:2024,price_paid:180000,how_acquired:'llc',tax:'current',notes:'Fourth LLC owner in 26 months'},
+ {address:'112 Page Rd',town:t,listed:true,acres:4.2,ask:399000,assessed_land:142000,assessed_total:142000,sqft:0,beds:0,zoning:'res',wetlands:'none',utilities:'wellseptic',road:'paved',conservation:'no',dom:112,owner:'',owner_mail:'',year_acquired:2019,price_paid:120000,how_acquired:'purchase',tax:'current',notes:'Perc test on file per listing'},
+ {address:'8 Hovey Rd',town:t,listed:true,acres:1.1,ask:735000,assessed_land:0,assessed_total:590000,sqft:2650,beds:4,zoning:'res',wetlands:'none',utilities:'public',road:'paved',conservation:'no',dom:22,owner:'',owner_mail:'',year_acquired:2001,price_paid:310000,how_acquired:'purchase',tax:'current',notes:'Colonial, needs kitchen'},
+ {address:'41 Shasta Dr',town:t,listed:false,acres:1.9,assessed_land:0,assessed_total:520000,sqft:3100,beds:4,zoning:'res',wetlands:'none',utilities:'wellseptic',road:'paved',conservation:'no',owner:'R. and D. Merrow',owner_mail:'Londonderry NH',year_acquired:1988,price_paid:145000,how_acquired:'purchase',tax:'current',notes:'Empty nesters per neighbor'},
+ {address:'Map 9 Lot 14, Adams Rd',town:t,listed:false,acres:12.4,assessed_land:88000,assessed_total:88000,sqft:0,beds:0,zoning:'rural',wetlands:'major',utilities:'none',road:'gravel',conservation:'currentuse',owner:'Estate of H. Pettengill',owner_mail:'Manchester NH',year_acquired:1961,price_paid:0,how_acquired:'inherit',tax:'late',notes:'In current use; estate in probate'}
+ ].map(p=>Object.assign({id:uid(),demo:true,comp_ppa:0,comp_ppsf:0},p));
+}
+
+/* ---------- RENDER ---------- */
+function go(v){$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));$$('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v));window.scrollTo({top:0});if(v==='results')renderList();if(v==='compare')renderCompare();if(v==='search')fillSearch();if(v==='data')fillData()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
+function setMode(m){S.mode=m;$('#modeBuyer').classList.toggle('on',m==='buyer');$('#modeAgent').classList.toggle('on',m==='agent');save();if($('#v-results').classList.contains('on'))renderList();if($('#v-detail').classList.contains('on')&&cur)renderDetail(cur)}
+$('#modeBuyer').onclick=()=>setMode('buyer');$('#modeAgent').onclick=()=>setMode('agent');
+
+function dialSvg(v,label){const r=54,c=2*Math.PI*r,off=c*(1-v/100);return '<svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="'+r+'" fill="none" stroke="var(--fill)" stroke-width="12"/><circle cx="70" cy="70" r="'+r+'" fill="none" stroke="'+col(v)+'" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+off+'" transform="rotate(-90 70 70)"/></svg><div class="center"><span class="num">'+v+'</span><span class="small muted">'+label+'</span></div>'}
+$('#heroDial').innerHTML=dialSvg(78,'deal score');
+
+function filtered(){let a=S.parcels.filter(p=>S.src==='all'||(S.src==='off'&&!p.listed)||(S.src==='on'&&p.listed)||(S.src==='short'&&S.shortlist.includes(p.id)));const t=S.search.type;if(t==='land')a=a.filter(p=>!(p.sqft>0));if(t==='home')a=a.filter(p=>p.sqft>0);
+ a=a.map(p=>({sc:score(p),p}));const k=S.sort;a.sort((x,y)=>k==='deal'?y.sc.d.total-x.sc.d.total:k==='sell'?y.sc.sl.total-x.sc.sl.total:k==='combo'?y.sc.combo-x.sc.combo:k==='price'?x.sc.d.price-y.sc.d.price:k==='acres'?(y.p.acres||0)-(x.p.acres||0):(x.sc.d.price/(x.sc.d.mv.v||x.sc.d.price||1))-(y.sc.d.price/(y.sc.d.mv.v||y.sc.d.price||1)));return a}
+function ringHtml(v){return '<div class="ring" style="background:conic-gradient('+col(v)+' '+v*3.6+'deg,var(--fill) 0)"><i></i><b class="num">'+v+'</b></div>'}
+function renderList(){const list=filtered();const s=S.search;$('#resTitle').textContent=(s.town?s.town+(s.state?', '+s.state:''):'Parcels');$('#resSub').textContent=S.parcels.length?list.length+' of '+S.parcels.length+' properties · '+(S.mode==='agent'?'Agent view':'Buyer view'):'';$('#sortBy').value=S.sort;$$('[data-src]').forEach(c=>c.classList.toggle('on',c.dataset.src===S.src));
+ const el=$('#plist');if(!S.parcels.length){el.innerHTML='<div class="empty">No properties yet. Add them on the Data tab, or <button class="btn ghost sm" id="loadDemo3">load the demo set</button> to see how scoring works.</div>';$('#loadDemo3').onclick=loadDemo;return}
+ if(!list.length){el.innerHTML='<div class="empty">Nothing matches this filter.</div>';return}
+ el.innerHTML=list.map(({p,sc})=>{const star=S.shortlist.includes(p.id);const disc=sc.d.mv.v&&sc.d.mv.basis!=='ask (no comp)'?Math.round((sc.d.price/sc.d.mv.v-1)*100):null;
+ return '<div class="card pcard" data-id="'+p.id+'">'+ringHtml(sc.d.total)+'<div><div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center"><h3>'+esc(p.address)+'</h3>'+(p.listed?'<span class="tag on">Listed</span>':'<span class="tag off">Off-market</span>')+(p.demo?'<span class="tag demo">Demo</span>':'')+'</div><div class="meta">'+esc(p.town||'')+' · '+(p.acres||0)+' ac'+(p.sqft?' · '+p.sqft.toLocaleString()+' sq ft · '+(p.beds||'?')+' bd':' · '+(p.land_use||'land'))+' · '+verdict(sc.d.total)+(sc.d.flags.length?' · '+sc.d.flags.length+' flag'+(sc.d.flags.length>1?'s':''):'')+'</div><div class="meta">Likely to sell: <b style="color:'+col(sc.sl.total)+'">'+sc.sl.total+'</b>'+(p.owner?' · '+esc(p.owner):'')+'</div></div><div class="right"><div class="num">'+fmtK(sc.d.price)+'</div><div class="meta">'+(disc!=null?(disc>0?'+':'')+disc+'% vs market':'no comp')+'</div><button class="btn ghost sm star" data-star="'+p.id+'" aria-label="Shortlist">'+(star?'★ Saved':'☆ Save')+'</button></div></div>'}).join('');
+}
+$('#plist').addEventListener('click',e=>{const st=e.target.closest('[data-star]');if(st){toggleStar(st.dataset.star);renderList();return}const c=e.target.closest('.pcard');if(c)openDetail(c.dataset.id)});
+function toggleStar(id){const i=S.shortlist.indexOf(id);i>=0?S.shortlist.splice(i,1):S.shortlist.push(id);save();toast(i>=0?'Removed from shortlist':'Added to shortlist')}
+$('#sortBy').onchange=e=>{S.sort=e.target.value;save();renderList()};
+$$('[data-src]').forEach(c=>c.onclick=()=>{S.src=c.dataset.src;save();renderList()});
+
+let cur=null;
+function openDetail(id){cur=S.parcels.find(p=>p.id===id);if(!cur)return;go('detail');renderDetail(cur)}
+function renderDetail(p){const {d,sl}=score(p);const of=offers(p);const star=S.shortlist.includes(p.id);const held=p.year_acquired?YEAR-p.year_acquired:null;
+ const bars=[['Price / value','price'],['Buildability','build'],['Utilities','util'],['Road / legal access','access'],['Size fit','acres']].map(([n,k])=>'<div class="bar"><span>'+n+' <span class="muted small">'+S.weights[k]+'%</span></span><div class="track"><div class="fillb '+(d.sub[k]>=65?'':d.sub[k]>=45?'o':'r')+'" style="width:'+d.sub[k]+'%"></div></div><span class="v num">'+d.sub[k]+'</span></div>').join('');
+ $('#detail').innerHTML='<div class="noprint" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem"><button class="btn ghost sm" data-go="results">← Parcels</button><button class="btn ghost sm" id="dStar">'+(star?'★ On shortlist':'☆ Add to shortlist')+'</button><button class="btn ghost sm" id="dEdit">Edit</button><button class="btn ghost sm" id="dPrint">Print / PDF</button><button class="btn warn sm" id="dDel">Delete</button></div>'+
+ '<div class="grid side"><div><div class="card" style="text-align:center"><div class="dial">'+dialSvg(d.total,verdict(d.total))+'</div><h2 style="margin-top:.5rem">'+esc(p.address)+'</h2><p class="muted">'+esc(p.town||'')+' · '+(p.acres||0)+' acres'+(p.sqft?' · '+p.sqft.toLocaleString()+' sq ft':'')+'</p>'+(p.listed?'<span class="tag on">Listed'+(p.dom?' · '+p.dom+' days':'')+'</span>':'<span class="tag off">Off-market</span>')+(p.demo?' <span class="tag demo">Demo data</span>':'')+'</div>'+
+ '<div class="card" style="margin-top:1rem"><h3>Likely to sell</h3><div style="display:flex;align-items:center;gap:1rem;margin:.5rem 0"><span class="num" style="font-size:2.6rem;color:'+col(sl.total)+'">'+sl.total+'</span><span class="small muted">out of 100, from ownership records</span></div><ul class="small" style="margin:0;padding-left:1.1rem">'+sl.why.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>'+(p.owner?'<hr class="hr"><div class="kv"><div><span>Owner</span>'+esc(p.owner)+'</div><div><span>Mails to</span>'+esc(p.owner_mail||'—')+'</div><div><span>Acquired</span>'+(p.year_acquired||'—')+(held!=null?' ('+held+' yrs)':'')+'</div><div><span>Paid</span>'+(p.price_paid?fmt(p.price_paid):p.price_paid===0?'$0 (transfer)':'—')+'</div><div><span>How</span>'+({purchase:'Purchase',inherit:'Inheritance',trust:'Trust',family:'Family transfer',llc:'LLC / investor'}[p.how_acquired]||'Unknown')+'</div><div><span>Taxes</span>'+({current:'Current',late:'Delinquent'}[p.tax]||'Unknown')+'</div></div>':'')+'</div></div>'+
+ '<div><div class="card"><h2>Market analysis</h2><div class="kv" style="margin:.7rem 0"><div><span>'+(p.listed?'Ask price':'Likely price')+'</span><b class="num">'+fmt(d.price)+'</b></div><div><span>Market estimate ('+d.mv.basis+')</span><b class="num">'+(d.mv.v?fmt(d.mv.v):'—')+'</b></div><div><span>Assessed total</span>'+fmt(p.assessed_total)+'</div><div><span>Per acre / per sq ft</span>'+(p.sqft?fmt(d.price/p.sqft)+'/sf':p.acres?fmt(d.price/p.acres)+'/ac':'—')+'</div></div>'+(d.mv.v&&d.mv.basis!=='ask (no comp)'?(d.price>d.mv.v*1.05?'<div class="risk">Priced '+Math.round((d.price/d.mv.v-1)*100)+'% above what comps support. Overpaying by about '+fmt(d.price-d.mv.v)+'.</div>':d.price<d.mv.v*.95?'<div class="ok">Priced '+Math.round((1-d.price/d.mv.v)*100)+'% below market estimate — about '+fmt(d.mv.v-d.price)+' of built-in value.</div>':'<div class="ok">Priced in line with comps.</div>'):'<div class="risk">No comp on file. Add town $/acre or $/sq ft on the Search tab to rate the price.</div>')+
+ '<h3 style="margin-top:1rem">Deal score breakdown</h3>'+bars+(d.flags.length?'<h3 style="margin-top:1rem">Flags to verify</h3>'+d.flags.map(f=>'<div class="risk">'+esc(f)+'</div>').join(''):'<div class="ok" style="margin-top:1rem">No flags. Still confirm buildability, septic and access with the town before you commit.</div>')+'</div>'+
+ '<div class="card" style="margin-top:1rem"><h2>Creative offers</h2><p class="small muted">Structures a listing agent rarely suggests, built from this owner\'s situation. Numbers are starting points — run them by your attorney and lender.</p>'+of.map(o=>'<div class="offer"><h3>'+o.t+'</h3><div class="why">'+o.why+'</div><div class="terms">'+o.terms+'</div></div>').join('')+'</div>'+
+ (p.listed?'':'<div class="card" style="margin-top:1rem"><h2>Outreach letter</h2><p class="small muted">'+(S.mode==='agent'?'Written as the buyer\'s agent.':'Written from you directly.')+' Edit your details on the Data tab. Mail it — letters get answered far more than calls.</p><div class="letter" id="letterTxt">'+esc(letter(p))+'</div><div class="noprint" style="margin-top:.6rem"><button class="btn sm" id="copyLetter">Copy letter</button></div></div>')+
+ (p.notes?'<div class="card" style="margin-top:1rem"><h3>Notes</h3><p>'+esc(p.notes)+'</p></div>':'')+'<div class="card noprint" style="margin-top:1rem"><h3>Records</h3><p class="small muted">'+(p.source_url?'<a href="'+esc(p.source_url)+'" target="_blank" rel="noopener">Open the town assessor card</a> · ':'')+(p.listing_url?'<a href="'+esc(p.listing_url)+'" target="_blank" rel="noopener">Open the listing</a> · ':'')+'</p><button class="btn ghost sm" id="dEnrich">Refresh owner record from assessor</button></div>'+'</div></div>';
+ $('#dStar').onclick=()=>{toggleStar(p.id);renderDetail(p)};$('#dEnrich').onclick=async()=>{toast('Looking up assessor card…');const r=await enrichOne(p);toast(r===true?'Owner record updated':'Not found: '+r);save();renderDetail(p)};$('#dPrint').onclick=()=>window.print();$('#dDel').onclick=()=>{if(confirm('Delete '+p.address+'?')){S.parcels=S.parcels.filter(x=>x.id!==p.id);S.shortlist=S.shortlist.filter(x=>x!==p.id);save();go('results')}};$('#dEdit').onclick=()=>{fillForm(p);go('data')};const cl=$('#copyLetter');if(cl)cl.onclick=()=>{navigator.clipboard.writeText(letter(p)).then(()=>toast('Letter copied'))};
+}
+function renderCompare(){const rows=S.parcels.filter(p=>S.shortlist.includes(p.id)).map(p=>({p,sc:score(p)})).sort((a,b)=>b.sc.d.total-a.sc.d.total);const el=$('#compare');if(!rows.length){el.innerHTML='<div class="empty">Your shortlist is empty. Save parcels from the Parcels tab.</div>';return}
+ el.innerHTML='<div class="card tblwrap"><table><tr><th>Property</th><th>Price</th><th>Market est.</th><th>vs market</th><th>Acres</th><th>Deal</th><th>Sell</th><th>Price</th><th>Build</th><th>Util</th><th>Access</th><th>Fit</th><th>Top risk</th></tr>'+rows.map(({p,sc})=>{const m=sc.d.mv.v&&sc.d.mv.basis!=='ask (no comp)'?Math.round((sc.d.price/sc.d.mv.v-1)*100)+'%':'—';return '<tr><td><b>'+esc(p.address)+'</b><br><span class="small muted">'+esc(p.town||'')+' · '+(p.listed?'listed':'off-market')+'</span></td><td>'+fmtK(sc.d.price)+'</td><td>'+(sc.d.mv.v?fmtK(sc.d.mv.v):'—')+'</td><td>'+m+'</td><td>'+(p.acres||0)+'</td><td><b style="color:'+col(sc.d.total)+'">'+sc.d.total+'</b></td><td style="color:'+col(sc.sl.total)+'">'+sc.sl.total+'</td><td>'+sc.d.sub.price+'</td><td>'+sc.d.sub.build+'</td><td>'+sc.d.sub.util+'</td><td>'+sc.d.sub.access+'</td><td>'+sc.d.sub.acres+'</td><td class="small">'+esc(sc.d.flags[0]||'—')+'</td></tr>'}).join('')+'</table></div><div class="noprint" style="margin-top:.8rem;display:flex;gap:.5rem"><button class="btn sm" id="exportShort">Export shortlist CSV</button><button class="btn ghost sm" id="cPrint">Print / PDF</button></div>';$('#exportShort').onclick=()=>exportCsv(rows.map(r=>r.p),'landscape-shortlist.csv');$('#cPrint').onclick=()=>window.print()}
+
+/* ---------- SEARCH FORM ---------- */
+const WK=[['price','Price / value'],['build','Buildability & zoning'],['util','Utilities'],['access','Road / legal access'],['acres','Size fit']];
+function renderWeights(){$('#weights').innerHTML=WK.map(([k,n])=>'<div class="bar"><span>'+n+'</span><input type="range" min="0" max="60" value="'+S.weights[k]+'" data-w="'+k+'"><span class="v num">'+S.weights[k]+'</span></div>').join('');$$('[data-w]').forEach(r=>r.oninput=()=>{const k=r.dataset.w,v=+r.value,others=WK.map(x=>x[0]).filter(x=>x!==k),rest=100-v,cur=others.reduce((a,x)=>a+S.weights[x],0)||1;S.weights[k]=v;others.forEach(x=>S.weights[x]=Math.round(S.weights[x]/cur*rest));const t=WK.reduce((a,x)=>a+S.weights[x[0]],0);S.weights[others[0]]+=100-t;save();renderWeights()})}
+function fillSearch(){const s=S.search;$('#f-town').value=s.town;$('#f-state').value=s.state;$('#f-type').value=s.type;$('#f-budget').value=s.budget||'';$('#f-down').value=s.down||'';$('#f-minac').value=s.minac||'';$('#f-maxac').value=s.maxac||'';$('#f-beds').value=s.beds||'';$('#f-sqft').value=s.sqft||'';$('#f-ppa').value=s.ppa||'';$('#f-ppsf').value=s.ppsf||'';$('#f-ratio').value=s.ratio||'';$$('#musts .chip').forEach(c=>c.classList.toggle('on',s.musts.includes(c.dataset.m)));renderWeights()}
+$$('#musts .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
+$('#saveSearch').onclick=()=>{const n=id=>+($(id).value)||0;S.search={town:$('#f-town').value.trim(),state:$('#f-state').value.trim().toUpperCase(),type:$('#f-type').value,budget:n('#f-budget'),down:n('#f-down'),minac:n('#f-minac'),maxac:n('#f-maxac'),beds:n('#f-beds'),sqft:n('#f-sqft'),musts:$$('#musts .chip.on').map(c=>c.dataset.m),ppa:n('#f-ppa'),ppsf:n('#f-ppsf'),ratio:n('#f-ratio')||1};save();toast('Search saved');go('results')};
+
+/* ---------- DATA ---------- */
+let editId=null;
+function fillForm(p){editId=p?p.id:null;const v=(id,x)=>$(id).value=(x==null?'':x);v('#a-addr',p?p.address:'');v('#a-town',p?p.town:S.search.town);$('#a-listed').value=p&&p.listed?'on':'off';v('#a-acres',p?p.acres:'');v('#a-ask',p?p.ask:'');v('#a-aland',p?p.assessed_land:'');v('#a-atotal',p?p.assessed_total:'');v('#a-sqft',p?p.sqft:'');v('#a-beds',p?p.beds:'');$('#a-zone').value=p?(p.zoning||''):'res';$('#a-wet').value=p?(p.wetlands||''):'';$('#a-util').value=p?(p.utilities||''):'';$('#a-road').value=p?(p.road||''):'';$('#a-cons').value=p?(p.conservation||'no'):'no';v('#a-dom',p?p.dom:'');v('#a-owner',p?p.owner:'');v('#a-mail',p?p.owner_mail:'');v('#a-year',p?p.year_acquired:'');v('#a-paid',p?p.price_paid:'');$('#a-how').value=p?(p.how_acquired||''):'';$('#a-tax').value=p?(p.tax||''):'';v('#a-notes',p?p.notes:'');$('#addOne').textContent=p?'Save changes':'Add property'}
+function fillData(){const st=S.settings;if(!$('#l-town').value)$('#l-town').value=S.search.town;if(!$('#l-state').value)$('#l-state').value=S.search.state;if(S.api)$('#l-api').value=S.api;$('#s-name').value=st.name;$('#s-brok').value=st.brok;$('#s-phone').value=st.phone;$('#s-email').value=st.email;$('#s-addr').value=st.addr;$('#s-client').value=st.client;$('#countTxt').textContent=S.parcels.length+' saved · '+S.shortlist.length+' shortlisted';if(!$('#a-town').value)$('#a-town').value=S.search.town}
+$('#addOne').onclick=()=>{const v=id=>$(id).value.trim(),n=id=>$(id).value===''?null:+$(id).value;if(!v('#a-addr')){toast('Address is required');return}
+ const p={id:editId||uid(),address:v('#a-addr'),town:v('#a-town'),listed:$('#a-listed').value==='on',acres:n('#a-acres')||0,ask:n('#a-ask')||0,assessed_land:n('#a-aland')||0,assessed_total:n('#a-atotal')||n('#a-aland')||0,sqft:n('#a-sqft')||0,beds:n('#a-beds')||0,zoning:$('#a-zone').value,wetlands:$('#a-wet').value,utilities:$('#a-util').value,road:$('#a-road').value,conservation:$('#a-cons').value,dom:n('#a-dom')||0,owner:v('#a-owner'),owner_mail:v('#a-mail'),year_acquired:n('#a-year'),price_paid:n('#a-paid'),how_acquired:$('#a-how').value,tax:$('#a-tax').value,notes:v('#a-notes'),comp_ppa:0,comp_ppsf:0};
+ const i=S.parcels.findIndex(x=>x.id===p.id);if(i>=0)S.parcels[i]=p;else S.parcels.push(p);save();toast(i>=0?'Saved':'Added');fillForm(null);go('results')};
+$('#saveSettings').onclick=()=>{S.settings={name:$('#s-name').value.trim(),brok:$('#s-brok').value.trim(),phone:$('#s-phone').value.trim(),email:$('#s-email').value.trim(),addr:$('#s-addr').value.trim(),client:$('#s-client').value.trim()};save();toast('Settings saved')};
+function parseCsv(t){const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'&&t[i+1]==='"'){f+='"';i++}else if(c==='"')q=false;else f+=c}else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}else f+=c}if(f||row.length){row.push(f);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()))}
+const MAP={address:['address','addr','location','parcel','map_lot','maplot','property'],town:['town','city','municipality'],listed:['listed','status','source'],acres:['acres','acreage','lot_size','lotsize'],ask:['ask','price','list_price','asking'],assessed_land:['assessed_land','land_value','land_assessed','assessedland'],assessed_total:['assessed_total','assessed','total_value','assessment','assessed_value'],sqft:['sqft','sq_ft','living_area','square_feet','gla'],beds:['beds','bedrooms','br'],zoning:['zoning','zone'],wetlands:['wetlands','wetland'],utilities:['utilities','utility','water_sewer'],road:['road','access','road_access','frontage'],conservation:['conservation','current_use','currentuse'],dom:['dom','days_on_market','days'],owner:['owner','owner_name','owner1'],owner_mail:['owner_mail','mailing','mailing_address','owner_address','mail'],year_acquired:['year_acquired','acquired','sale_date','deed_date','deed_year','purchase_year'],price_paid:['price_paid','paid','sale_price','deed_price','last_sale'],how_acquired:['how_acquired','acquisition','deed_type','how'],tax:['tax','tax_status','taxes'],notes:['notes','note','comments'],comp_ppa:['comp_ppa','ppa'],comp_ppsf:['comp_ppsf','ppsf']};
+function norm(k){return k.toLowerCase().trim().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')}
+function enumz(field,v){v=(v||'').toString().toLowerCase();const has=(...a)=>a.some(x=>v.includes(x));switch(field){case 'zoning':return has('agr')?'agres':has('rural','rr')?'rural':has('res','r-','r1','r2','r3','ar','sf')?'res':has('com','ind','c-','i-')?'com':v?'res':'';case 'wetlands':return has('none','no','dry')?'none':has('major','most','all','high')?'major':has('part','some','yes','minor')?'partial':v==='y'?'partial':'';case 'utilities':return has('public','municipal','town water','sewer')?'public':has('approved','perc','septic ok','tested','existing')?'wellseptic':has('none','no util')?'none':has('well','septic','private')?'wellunk':'';case 'road':return has('landlock','no access')?'landlocked':has('easement','row','right')?'easement':has('private')?'private':has('gravel','dirt','unpaved')?'gravel':has('paved','public','town','state','yes')?'paved':'';case 'conservation':return has('easement')?'easement':has('current','cu')?'currentuse':'no';case 'how_acquired':return has('inherit','estate','probate','heir')?'inherit':has('trust')?'trust':has('llc','inc','corp','invest')?'llc':has('family','gift','quit')?'family':has('purchase','sale','warranty','deed','buy')?'purchase':'';case 'tax':return has('delin','late','lien','overdue')?'late':has('current','paid','ok')?'current':'';}return v}
+function importRows(text){const rows=parseCsv(text);if(rows.length<2){toast('Need a header row plus at least one row');return 0}const hdr=rows[0].map(norm);const idx={};for(const f in MAP){const i=hdr.findIndex(h=>MAP[f].includes(h));if(i>=0)idx[f]=i}if(idx.address==null){toast('No address column found');return 0}let n=0;const num=x=>{const v=parseFloat((x||'').toString().replace(/[$,]/g,''));return isNaN(v)?null:v};
+ for(const r of rows.slice(1)){const g=f=>idx[f]!=null?(r[idx[f]]||''):'';if(!g('address').trim())continue;const yr=g('year_acquired');const y=yr?(yr.match(/(19|20)\d{2}/)||[])[0]:null;const lst=(g('listed')||'').toLowerCase();const paid=num(g('price_paid'));
+ S.parcels.push({id:uid(),address:g('address').trim(),town:g('town').trim()||S.search.town,listed:/^(y|yes|true|listed|on|active|for sale)/.test(lst),acres:num(g('acres'))||0,ask:num(g('ask'))||0,assessed_land:num(g('assessed_land'))||0,assessed_total:num(g('assessed_total'))||num(g('assessed_land'))||0,sqft:num(g('sqft'))||0,beds:num(g('beds'))||0,zoning:enumz('zoning',g('zoning')),wetlands:enumz('wetlands',g('wetlands')),utilities:enumz('utilities',g('utilities')),road:enumz('road',g('road')),conservation:enumz('conservation',g('conservation')),dom:num(g('dom'))||0,owner:g('owner').trim(),owner_mail:g('owner_mail').trim(),year_acquired:y?+y:null,price_paid:paid,how_acquired:enumz('how_acquired',g('how_acquired')||(paid===0?'family':'')),tax:enumz('tax',g('tax')),notes:g('notes').trim(),comp_ppa:num(g('comp_ppa'))||0,comp_ppsf:num(g('comp_ppsf'))||0});n++}
+ save();return n}
+$('#importCsv').onclick=()=>{const n=importRows($('#csv').value);if(n){$('#csv').value='';toast('Imported '+n+' properties');go('results')}};
+$('#dlTemplate').onclick=()=>dl('landscape-template.csv','address,town,listed,acres,ask,assessed_land,assessed_total,sqft,beds,zoning,wetlands,utilities,road,conservation,dom,owner,owner_mail,year_acquired,price_paid,how_acquired,tax,notes\n"Map 12 Lot 45, Rockingham Rd",Londonderry,no,6.2,,145000,145000,0,0,residential,none,well/septic,paved,no,,"Smith, John","Nashua NH",1996,52000,purchase,current,""\n"12 Elm St",Bedford,yes,1.4,689000,,610000,2800,4,residential,none,public,paved,no,34,,,,,,,""\n');
+function dl(name,text){const b=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function exportCsv(list,name){const H=['address','town','listed','acres','price','market_estimate','vs_market_pct','deal_score','verdict','sell_score','price_score','build_score','util_score','access_score','fit_score','flags','owner','owner_mail','year_acquired','price_paid','how_acquired','tax','notes'];const q=v=>'"'+(v==null?'':v).toString().replace(/"/g,'""')+'"';const rows=list.map(p=>{const {d,sl}=score(p);const m=d.mv.v&&d.mv.basis!=='ask (no comp)'?Math.round((d.price/d.mv.v-1)*100):'';return [p.address,p.town,p.listed?'yes':'no',p.acres,Math.round(d.price),Math.round(d.mv.v),m,d.total,verdict(d.total),sl.total,d.sub.price,d.sub.build,d.sub.util,d.sub.access,d.sub.acres,d.flags.join('; '),p.owner,p.owner_mail,p.year_acquired,p.price_paid,p.how_acquired,p.tax,p.notes].map(q).join(',')});dl(name,H.join(',')+'\n'+rows.join('\n'));toast('Exported')}
+$('#exportAll').onclick=()=>exportCsv(filtered().map(x=>x.p),'landscape-parcels.csv');
+$('#backupBtn').onclick=()=>dl('landscape-backup.json',JSON.stringify(S,null,1));
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.parcels)throw 0;S=Object.assign({},DEFAULT,j);save();toast('Restored');go('results')}catch(x){toast('That file is not a Landscape backup')}})};
+$('#clearAll').onclick=()=>{if(confirm('Delete all properties and shortlist? Settings and search stay.')){S.parcels=[];S.shortlist=[];save();fillData();toast('Cleared')}};
+function loadDemo(){S.parcels=S.parcels.filter(p=>!p.demo).concat(demo());if(!S.search.town){S.search.town='Londonderry';S.search.state='NH';S.search.ppa=48000;S.search.ppsf=265;S.search.ratio=1.12;S.search.minac=2;S.search.maxac=8;S.search.budget=750000;S.search.down=75000;S.search.beds=4;S.search.sqft=2500}save();toast('Demo set loaded — town comps filled in');go('results')}
+$('#loadDemo').onclick=loadDemo;$('#loadDemo2').onclick=loadDemo;
+function esc(s){return (s==null?'':s).toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+
+/* ---------- LIVE PULLS ---------- */
+const GRANIT='https://nhgeodata.unh.edu/hosting/rest/services/Hosted/CAD_ParcelMosaic/FeatureServer/1/query';
+const SLU={'11':'Single-family home','12':'Multi-family 2-4','13':'Apartments 5+','14':'Condo','17':'Manufactured home w/ land','18':'Manufactured home','19':'Other residential','22':'Residential land','23':'Commercial land','24':'Industrial land','33':'Commercial','34':'Industrial'};
+const normA=a=>(a||'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function apiUrl(){const b=($('#l-api').value||S.api||'').trim();if(b)return b.replace(/\/$/,'')+'/api/landscape';if(location.protocol==='file:')return '';return location.origin+'/api/landscape'}
+// --- Connector transport (published artifact): runs the same pulls through the viewer's Apify connector ---
+let MCP=null,MCPready=(async()=>{try{if(window.claude&&claude.use){MCP=await claude.use('mcp')}}catch(e){MCP=null}return MCP})();
+const strip=s=>String(s||'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+const money=s=>{if(s==null||s==='')return null;const n=parseFloat(String(s).replace(/[^0-9.]/g,''));return isNaN(n)?null:n};
+const vslug=t=>t.toLowerCase().replace(/[^a-z]/g,'')+'nh';
+function mcpErr(e){const c=e&&e.code;if(c==='server_not_connected')return 'Connector not added — open claude.ai Settings → Connectors and add it.';if(c==='needs_reauth')return 'Connector needs reconnecting in claude.ai Settings → Connectors.';if(c==='not_in_manifest')return 'This page was not allowed to use the connector — reload and allow it when asked.';if(c==='tool_error')return 'Connector reported: '+(e.message||'').slice(0,160);return (e&&e.message)||String(e)}
+function payloadOf(r){let p=r&&r.payload;if(p==null&&r&&r.content)for(const b of r.content){if(b.type==='text'){try{p=JSON.parse(b.text);break}catch(_){p=b.text}}}if(typeof p==='string'){try{p=JSON.parse(p)}catch(_){}}return p}
+let toolMap=null;async function toolName(server,want){try{if(!toolMap){const l=await MCP.listTools();toolMap={};for(const sv of (l.servers||[]))toolMap[sv.server]=(sv.tools||[]).map(t=>t.name)}const names=toolMap[server]||[];return names.find(n=>n===want)||names.find(n=>n.endsWith(want))||names.find(n=>n.endsWith(want.replace(/^apify--/,'').replace(/^igolaizola--/,'')))||want}catch(e){return want}}
+async function mcpCall(server,tool,input){const r=await MCP.callTool(server,await toolName(server,tool),input);return payloadOf(r)}
+async function checkConn(){const out=$('#connOut');out.style.display='block';const lines=[];const say=m=>{lines.push(m);out.textContent=lines.join('\n')};
+ say('Page host: '+(window.claude&&claude.use?'Claude viewer (connectors possible)':'plain browser tab — open this inside the Claude app to use connectors'));
+ await MCPready;if(!MCP){say('Connector bridge: NOT available here. Live pulls fall back to the server address under "How this works".');return}say('Connector bridge: available');
+ try{const perm=await claude.use('permissions');if(perm){const st=await perm.state().catch(()=>({}));say('Permission: '+JSON.stringify(st))}}catch(e){}
+ try{const l=await MCP.listTools();for(const sv of (l.servers||[]))say('• '+sv.server+' ('+sv.authStatus+'): '+(sv.tools||[]).map(t=>t.name).join(', '));if(!(l.servers||[]).length)say('No connectors listed — Apify and Zillow must be added in claude.ai Settings → Connectors.')}catch(e){say('listTools failed: '+(e.code||'')+' '+(e.message||e))}
+ say('Testing a tiny Apify fetch…');try{const t=await webFetch('https://gis.vgsi.com/londonderrynh/Streets.aspx?Name=MAMMOTH%20RD','html');say('Apify OK — '+parseStreet(t).length+' Mammoth Rd cards found')}catch(e){say('Apify FAILED: '+(e.code||'')+' '+(e.message||e))}}
+$('#checkConn').onclick=checkConn;
+function pill(t,tone){const e=$('#connPill');e.textContent=t;e.style.background=tone==='ok'?'#d9f2e1':tone==='bad'?'#fde2e2':tone==='warn'?'#fff0c2':'var(--line,#eee)'}
+async function autoConnect(){try{await MCPready;const btn=$('#checkConn');btn.style.display='';if(!MCP){pill(window.claude&&claude.use?'Connectors unavailable here':'Open in the Claude app for live pulls','warn');return}
+ try{const perm=await claude.use('permissions');if(perm)await perm.request(['mcp:Apify']).catch(()=>{})}catch(e){}
+ let l;try{l=await MCP.listTools()}catch(e){pill('Connector check failed: '+(e.code||e.message),'bad');return}
+ const by={};for(const sv of (l.servers||[]))by[sv.server]=sv;const st=n=>{const sv=by[n];if(!sv)return n+' not added';if(!(sv.tools||[]).length)return n+' not connected';if(sv.authStatus==='needs_reauth')return n+' needs reconnect';return n+' ✓'};
+ const a=st('Apify');const ok=a.endsWith('✓');pill(a,ok?'ok':'bad');if(!ok)status('Add or reconnect the missing connector in claude.ai Settings → Connectors, then reopen this page.')}catch(e){pill('Connection check error','bad')}}
+setTimeout(autoConnect,0);
+async function pullAll(){const {t}=liveTown();if(!t){toast('Enter a town first');return}await MCPready;await pullGranit();if(!/^Added /.test($('#liveStatus').textContent))return;
+ await pullVgsi();if($('#l-listurl').value.trim())await pullListings();status($('#liveStatus').textContent+' Done.');toast('Live pull complete')}
+$('#pullAll').onclick=pullAll;
+async function runActor(server,tool,input,fields,limit){let run=await mcpCall(server,tool,input);if(typeof run==='string')throw new Error(run.slice(0,200));let tries=0;while(run&&run.status&&!/SUCCEEDED|FAILED|ABORTED|TIMED/.test(run.status)&&run.runId&&tries++<8){run=await mcpCall(server,'get-actor-run',{runId:run.runId,waitSecs:40})}
+ if(!run||run.status!=='SUCCEEDED')throw new Error('Run '+(run&&run.status||'failed'));const ds=run.storages&&run.storages.datasets&&run.storages.datasets.default;if(!ds)throw new Error('No results returned');
+ let items=[],off=0;while(true){const d=await mcpCall(server,'get-dataset-items',{datasetId:ds.id,fields,limit:limit||100,offset:off,clean:true});const it=(d&&d.items)||[];items=items.concat(it);off+=it.length;if(!it.length||off>=(d.totalItemCount||0)||off>=(limit||100))break}return items}
+async function webFetch(url,format){const it=await runActor('Apify','apify--web-fetch',{url,formats:[format]},format+',fetch.httpStatusCode',1);const r=it[0]||{};if(r['fetch.httpStatusCode']&&r['fetch.httpStatusCode']>=400)throw new Error('Site returned '+r['fetch.httpStatusCode']);return r[format]||''}
+function vtable(h,id){const m=h.match(new RegExp('id="MainContent_'+id+'".*?</table>','s'));if(!m)return [];return [...m[0].matchAll(/<tr[^>]*>(.*?)<\/tr>/gs)].map(r=>[...r[1].matchAll(/<t[dh][^>]*>(.*?)<\/t[dh]>/gs)].map(c=>strip(c[1])))}
+const vspan=(h,id)=>{const m=h.match(new RegExp('id="MainContent_'+id+'"[^>]*>(.*?)</span>','s'));return m?strip(m[1]):null};
+const parseStreet=h=>[...h.matchAll(/<a href=['"]Parcel\.aspx\?pid=(\d+)['"]>([^<]*)</g)].map(m=>({pid:m[1],address:strip(m[2])}));
+const streetCache={};
+async function vgsiStreet(town,street){const k=vslug(town)+'|'+street.toUpperCase();if(streetCache[k])return streetCache[k];const h=await webFetch('https://gis.vgsi.com/'+vslug(town)+'/Streets.aspx?Name='+encodeURIComponent(street.toUpperCase()),'html');if(!h)throw new Error('Assessor site did not answer for '+town+' — this town may not use Vision (VGSI).');return streetCache[k]=parseStreet(h)}
+async function vgsiParcel(town,pid){const h=await webFetch('https://gis.vgsi.com/'+vslug(town)+'/Parcel.aspx?pid='+pid,'html');if(!h)throw new Error('Card '+pid+' not returned');
+ const sales=vtable(h,'grdSales').slice(1).map(c=>({owner:c[0],price:money(c[1]),book_page:c[3],instrument:c[4],date:c[5]})).filter(s=>s.date&&!s.date.startsWith('01/01/1900'));
+ const owner=vspan(h,'lblOwner')||vspan(h,'lblGenOwner')||'';const key=x=>(x||'').toUpperCase().replace(/[^A-Z ]/g,' ').trim().split(/\s+/)[0]||'';let last=sales[0];for(const s of sales){if(key(s.owner)&&key(s.owner)===key(owner))last=s;else break}
+ const bld=h.match(/id="MainContent_ctl\d+_lblBldArea"[^>]*>(.*?)<\/span>/s),yb=h.match(/id="MainContent_ctl\d+_lblYearBuilt"[^>]*>(.*?)<\/span>/s);const cns=Object.fromEntries(vtable(h,'ctl\\d+_grdCns').slice(1).map(c=>[c[0],c[1]]));
+ const o=owner.toUpperCase();let how='';if(/ESTATE|HEIRS|ADMINISTRATOR|EXECUTOR/.test(o))how='inherit';else if(/TRUST|TRUSTEE|REV TR|\bTR\b/.test(o))how='trust';else if(/LLC|INC\b|CORP|\bLP\b|LTD|PROPERTIES|HOLDINGS|REALTY/.test(o))how='llc';else if(last&&last.price===0)how='family';else if(last&&last.price>0)how='purchase';
+ return {pid,address:vspan(h,'lblLocation'),mblu:vspan(h,'lblMblu'),owner,co_owner:vspan(h,'lblCoOwner'),owner_mail:vspan(h,'lblAddr1'),assessed_total:money(vspan(h,'lblGenAssessment')),assessed_land:money(vspan(h,'lblLndAsmt')),acres:money(vspan(h,'lblLndSize')),zone:vspan(h,'lblZone'),use_code:vspan(h,'lblUseCode'),use_desc:vspan(h,'lblUseCodeDescription'),bld_area:bld?money(strip(bld[1])):null,year_built:yb?money(strip(yb[1])):null,beds:money(cns['Bedrooms']),baths:money(cns['Full Baths']),style:cns['Style']||null,heat:cns['Heat Fuel']||null,year_acquired:last&&last.date?parseInt(last.date.slice(-4)):null,price_paid:last?last.price:null,how_acquired:how,sales,source:'https://gis.vgsi.com/'+vslug(town)+'/Parcel.aspx?pid='+pid}}
+async function mcpApi(b){switch(b.action){
+ case 'lookup':{const m=(b.address||'').trim().toUpperCase().match(/^(\d+[A-Z]?)\s+(.+)$/);const num=m?m[1]:'',street=m?m[2]:(b.address||'').trim().toUpperCase();const list=await vgsiStreet(b.town,street);const want=(num+' '+street).trim();const hit=list.find(p=>p.address.toUpperCase()===want)||list.find(p=>p.address.toUpperCase().startsWith(num+' ')&&p.address.toUpperCase().includes(street));if(!hit)throw new Error('No assessor card found for '+want);return vgsiParcel(b.town,hit.pid)}
+ case 'listings':{const h=await webFetch(b.url,'html');const found=parseListingsHtml(h,b.url);if(!found.length)throw new Error('No listings with an address and price were found on that page.');return {listings:found}}
+ default:throw new Error('unknown action')}}
+async function api(body){const explicit=($('#l-api').value||S.api||'').trim();await MCPready;if(MCP&&!explicit){try{return await mcpApi(body)}catch(e){throw new Error(mcpErr(e))}}
+ const u=apiUrl();if(!u)throw new Error('Open the hosted app (or enter the server address under "How this works") to use owner and listing pulls.');const hdr={'Content-Type':'application/json'};if(SESSION&&SESSION.access_token)hdr.Authorization='Bearer '+SESSION.access_token;const r=await fetch(u,{method:'POST',headers:hdr,body:JSON.stringify(body)});const j=await r.json().catch(()=>({error:'Bad response'}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{data:j});return j}
+async function granitFetch(q){try{const r=await fetch(GRANIT+'?'+q);return await r.json()}catch(e){await MCPready;if(!MCP)throw e;try{const t=await webFetch(GRANIT+'?'+q,'text');return JSON.parse(t)}catch(e2){throw new Error(mcpErr(e2))}}}
+function status(m){$('#liveStatus').textContent=m;if(/error|failed|not |could/i.test(m))toast(m.slice(0,120))}
+function liveTown(){const t=$('#l-town').value.trim()||S.search.town,st=($('#l-state').value.trim()||S.search.state||'NH').toUpperCase();return {t,st}}
+function zoneMap(z){z=(z||'').toUpperCase();if(!z)return '';if(/^AR|^AG|^RA|^RR/.test(z))return 'agres';if(/^R|RES/.test(z))return 'res';if(/^C|^I|^B|IND|COM/.test(z))return 'com';return 'rural'}
+async function pullGranit(){const {t,st}=liveTown();if(!t){toast('Enter a town first');return}if(st!=='NH'){toast('Live parcel pulls cover New Hampshire for now — use CSV import for '+st);return}
+ const codes=$('#l-types').value.split(',').map(c=>"'"+c+"'").join(',');const minac=+$('#l-minac').value||S.search.minac||0;status('Reading the state parcel map…');let all=[],off=0;
+ try{while(true){const q=new URLSearchParams({where:"town='"+t.toUpperCase().replace(/'/g,"''")+"' AND slu IN ("+codes+")",outFields:'pid,displayid,streetaddress,slu,SHAPE__Area',returnGeometry:'false',resultRecordCount:'2000',resultOffset:String(off),f:'json'});const j=await granitFetch(q);if(j.error)throw new Error(j.error.message);all=all.concat(j.features||[]);if(!j.exceededTransferLimit||!j.features.length)break;off+=j.features.length}}catch(e){status('Parcel map error: '+e.message);return}
+ if(!all.length){status('No parcels found for "'+t+'". Check the spelling — it must match the town name exactly.');return}
+ const have=new Map(S.parcels.filter(p=>normA(p.town)===normA(t)).map(p=>[normA(p.address),p]));let n=0,skip=0;
+ for(const f of all){const a=f.attributes;const acres=Math.round((a.SHAPE__Area||0)/43560*100)/100;if(acres<minac){skip++;continue}const addr=(a.streetaddress||'').trim()||('Map/Lot '+(a.displayid||a.pid));const k=normA(addr);
+  if(have.has(k)){const p=have.get(k);if(!p.acres)p.acres=acres;p.granit_pid=a.pid;continue}
+  const home=a.slu==='11';S.parcels.push({id:uid(),address:addr.replace(/\b([A-Z])([A-Z]+)\b/g,(m,x,y)=>x+y.toLowerCase()),town:t,listed:false,acres,ask:0,assessed_land:0,assessed_total:0,sqft:0,beds:0,zoning:'',wetlands:'',utilities:'',road:'',conservation:'no',dom:0,owner:'',owner_mail:'',year_acquired:null,price_paid:null,how_acquired:'',tax:'',notes:'GRANIT: '+(SLU[a.slu]||a.slu)+' · Map/Lot '+(a.displayid||a.pid),comp_ppa:0,comp_ppsf:0,granit_pid:a.pid,map_lot:a.displayid,land_use:SLU[a.slu]||a.slu,is_home:home});n++}
+ if(!S.search.town){S.search.town=t;S.search.state=st}save();status('Added '+n+' parcels from '+all.length+' on the map'+(skip?' ('+skip+' below '+minac+' acres skipped)':'')+'. Next: add owner records.');toast(n+' parcels added');fillData()}
+async function enrichOne(p){try{const d=await api({action:'lookup',town:p.town,address:p.address});Object.assign(p,{owner:d.owner||p.owner,owner_mail:d.owner_mail||p.owner_mail,assessed_total:d.assessed_total??p.assessed_total,assessed_land:d.assessed_land??p.assessed_land,acres:d.acres||p.acres,sqft:d.bld_area||p.sqft,beds:d.beds||p.beds,year_acquired:d.year_acquired??p.year_acquired,price_paid:d.price_paid??p.price_paid,how_acquired:d.how_acquired||p.how_acquired,zoning:p.zoning||zoneMap(d.zone),zone_code:d.zone,year_built:d.year_built,style:d.style,source_url:d.source,enriched:Date.now()});
+  if(!p.tax)p.tax='';const hist=(d.sales||[]).slice(0,3).map(s=>s.date.slice(-4)+' '+(s.price?fmt(s.price):'$0')+' '+s.owner).join(' | ');p.notes=(p.notes||'').replace(/ · Assessor:.*$/,'')+(hist?' · Assessor: '+d.use_desc+', zone '+(d.zone||'?')+(d.year_built?', built '+d.year_built:'')+'. Deeds: '+hist:'');return true}catch(e){return e.message}}
+async function pullVgsi(){const {t}=liveTown();const list=S.parcels.filter(p=>normA(p.town)===normA(t)&&!p.enriched&&/^\d/.test(p.address.trim()));const noNum=S.parcels.filter(p=>normA(p.town)===normA(t)&&!p.enriched&&!/^\d/.test(p.address.trim())).length;
+ if(!list.length){status('Nothing to enrich for '+t+(noNum?' — '+noNum+' parcels have no street number, so their card must be opened by map/lot on the assessor site.':'.'));return}
+ if(list.length>150&&!confirm('This will open '+list.length+' assessor cards (roughly '+Math.ceil(list.length*2/60)+' minutes). Continue?'))return;
+ let done=0,ok=0,fail=0;const queue=list.slice();const worker=async()=>{while(queue.length){const p=queue.shift();const r=await enrichOne(p);r===true?ok++:fail++;done++;if(done%5===0){status('Owner records: '+done+' of '+list.length+' ('+fail+' not found)');save()}}};
+ await Promise.all([worker(),worker(),worker()]);save();status('Owner records added for '+ok+' parcels'+(fail?', '+fail+' cards not found (rear lots and unnumbered parcels)':'')+(noNum?'. '+noNum+' unnumbered parcels skipped.':'.'));toast('Owner records added');fillData()}
+async function pullListings(){const {t,st}=liveTown();const url=$('#l-listurl').value.trim();if(!url){status('Paste a listings page link (LandWatch, Realtor.com, a brokerage search) in the field above, then tap step 3.');return}status('Reading that listings page…');
+ try{const j=await api({action:'listings',url});const have=new Map(S.parcels.map(p=>[normA(p.address)+'|'+normA(p.town),p]));const haveA=new Map(S.parcels.map(p=>[normA(p.address),p]));let n=0,m=0;
+  for(const l of j.listings){if(!l.address)continue;const town=l.town||t;const p=have.get(normA(l.address)+'|'+normA(town))||haveA.get(normA(l.address));const base={listed:true,ask:l.ask||0,listing_url:l.url||url};if(p){Object.assign(p,base,{acres:p.acres||l.acres||0});m++}else{S.parcels.push(Object.assign({id:uid(),address:l.address,town,acres:l.acres||0,assessed_land:0,assessed_total:0,sqft:0,beds:0,zoning:'',wetlands:'',utilities:'',road:'',conservation:'no',dom:0,owner:'',owner_mail:'',year_acquired:null,price_paid:null,how_acquired:'',tax:'',notes:'Listing from '+new URL(url).hostname,comp_ppa:0,comp_ppsf:0},base));n++}}
+  save();status('Listings: '+n+' new, '+m+' matched to parcels you already had.');toast('Listings added');fillData()}catch(e){status('Listings: '+e.message)}}
+
+// Generic listings-page parser (JSON-LD first, text pattern second). Same logic as the server's.
+function parseListingsHtml(html,pageUrl){const out=[],seen=new Set();const add=l=>{if(!l.address)return;const k=normA(l.address);if(seen.has(k))return;seen.add(k);out.push(l)};
+ const addrOf=o=>{const a=o.address||(o.offers&&o.offers.address)||(o.item&&o.item.address)||null;if(!a)return null;if(typeof a==='string')return {address:a,town:'',state:'',zip:''};return {address:a.streetAddress||'',town:a.addressLocality||'',state:a.addressRegion||'',zip:a.postalCode||''}};
+ const priceOf=o=>{for(const c of [o.price,o.offers&&o.offers.price,o.offers&&o.offers.lowPrice,o.item&&o.item.offers&&o.item.offers.price,o.item&&o.item.price]){const n=money(c);if(n)return n}return null};
+ const walk=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o))return o.forEach(walk);const a=addrOf(o),p=priceOf(o);if(a&&a.address&&p){let acres=null;const lot=o.lotSize||(o.item&&o.item.lotSize)||o.floorSize;if(lot&&typeof lot==='object'){const v=money(lot.value),u=String(lot.unitText||lot.unitCode||'').toLowerCase();if(v)acres=/acre/.test(u)?v:/ft|sq/.test(u)?v/43560:null}add(Object.assign(a,{ask:p,acres,url:o.url||(o.item&&o.item.url)||o['@id']||pageUrl}))}Object.values(o).forEach(walk)};
+ for(const m of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){try{walk(JSON.parse(m[1].trim()))}catch(_){}}
+ if(!out.length){const text=strip(html);const SUF='(?:Rd|Road|St|Street|Ave|Avenue|Ln|Lane|Dr|Drive|Way|Hwy|Highway|Rt|Route|Trl|Trail|Ct|Court|Cir|Circle|Pl|Place|Blvd|Ter|Terrace|Path|Pike|Tpke|Turnpike)';
+  for(const m of text.matchAll(new RegExp("(\\d{1,6}[A-Za-z]?\\s+[A-Z][A-Za-z0-9'.\\- ]{2,40}?\\s"+SUF+")\\b[^$]{0,160}\\$([\\d,]{4,})","g"))){const ask=money(m[2]);if(ask&&ask>=1000)add({address:m[1].trim(),town:'',state:'',zip:'',ask,acres:null,url:pageUrl})}
+  for(const m of text.matchAll(new RegExp("\\$([\\d,]{4,})[^$]{0,160}?(\\d{1,6}[A-Za-z]?\\s+[A-Z][A-Za-z0-9'.\\- ]{2,40}?\\s"+SUF+")\\b","g"))){const ask=money(m[1]);if(ask&&ask>=1000)add({address:m[2].trim(),town:'',state:'',zip:'',ask,acres:null,url:pageUrl})}}
+ return out}
+
+// ---- Accounts, credits, nationwide search (hosted app) ----
+let SBC=null,SESSION=null;
+function cfgOk(){const c=window.LS_CONFIG||{};return c.supabaseUrl&&!/^__/.test(c.supabaseUrl)&&c.supabaseAnonKey&&!/^__/.test(c.supabaseAnonKey)}
+async function initAuth(){if(!cfgOk()||!window.supabase){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
+ SBC=supabase.createClient(window.LS_CONFIG.supabaseUrl,window.LS_CONFIG.supabaseAnonKey);const {data}=await SBC.auth.getSession();SESSION=data.session;SBC.auth.onAuthStateChange((_e,sess)=>{SESSION=sess;renderAcct()});renderAcct();
+ const q=new URLSearchParams(location.search);if(q.get('paid')){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000);history.replaceState(null,'',location.pathname)}}
+async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');return}
+ inn.style.display='';out.style.display='none';$('#acct-who').textContent=SESSION.user.email;
+ try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn')}catch(e){$('#acctStatus').textContent=e.message}}
+function cpill(t,tone){const e=$('#creditPill');e.textContent=t;e.style.background=tone==='ok'?'#d9f2e1':tone==='warn'?'#fff0c2':'var(--line,#eee)'}
+async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const {error}=await SBC.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});toast(error?error.message:'Check your email for the sign-in link')}
+async function buy(sku){try{$('#acctStatus').textContent='Opening checkout…';const j=await api({action:'checkout',sku});location.href=j.url}catch(e){$('#acctStatus').textContent=e.message}}
+async function findNation(){if(!SESSION){toast('Sign in first (Account & credits below)');$('#acct-email').focus();return}const st=$('#n-state').value.trim().toUpperCase(),county=$('#n-county').value.trim(),city=$('#n-city').value.trim();if(!st){toast('Enter a state');return}if(!county&&!city){toast('Enter a county or a city');return}
+ const count=+$('#n-count').value||20;const el=$('#nationStatus');el.textContent='Searching '+(city||county)+', '+st+' — '+count+' credits…';
+ try{const j=await api({action:'regrid',state:st,county,city,land_use:$('#n-use').value,min_acres:$('#n-minac').value,max_acres:$('#n-maxac').value,count});
+  const have=new Map(S.parcels.map(p=>[normA(p.address)+'|'+normA(p.town),p]));let n=0,m=0;
+  for(const r of j.parcels){const k=normA(r.address)+'|'+normA(r.town);const rec={address:r.address.replace(/\b([A-Z])([A-Z]+)\b/g,(x,a,b)=>a+b.toLowerCase()),town:r.town.replace(/\b([A-Z])([A-Z]+)\b/g,(x,a,b)=>a+b.toLowerCase()),state:r.state,owner:r.owner,owner_mail:r.owner_mail,absentee:r.absentee,acres:r.acres||0,assessed_total:r.assessed_total||0,assessed_land:r.assessed_land||0,sqft:r.sqft||0,year_built:r.year_built,year_acquired:r.year_acquired,price_paid:r.price_paid,how_acquired:r.how_acquired,land_use:r.land_use,zone_code:r.zone,county:r.county,parcel_number:r.parcel_number,source_url:r.source,enriched:Date.now()};
+   if(have.has(k)){Object.assign(have.get(k),rec);m++}else{S.parcels.push(Object.assign({id:uid(),listed:false,ask:0,beds:0,zoning:'',wetlands:'',utilities:'',road:'',conservation:'no',dom:0,tax:'',notes:'Regrid: '+(r.land_use||'')+(r.parcel_number?' · Parcel '+r.parcel_number:''),comp_ppa:0,comp_ppsf:0,is_home:/single|home|residen/i.test(r.land_use||'')&&!/vacant/i.test(r.land_use||'')},rec));n++}}
+  if(!S.search.town&&city){S.search.town=city;S.search.state=st}else if(!S.search.state){S.search.state=st}save();
+  el.textContent=j.parcels.length+' records added ('+n+' new, '+m+' updated). Charged '+j.charged+' credits'+(j.charged<j.requested?' — only '+j.charged+' parcels matched, the rest were refunded':'')+'. Open the Parcels tab to see them ranked.';toast(j.parcels.length+' candidates added');renderAcct();renderList&&renderList()}
+ catch(e){el.textContent=e.message;if(/credits/i.test(e.message))$('#acctCard').scrollIntoView({behavior:'smooth'})}}
+$('#findNation').onclick=findNation;$('#acctSend').onclick=sendLink;$('#acctOutBtn').onclick=async()=>{await SBC.auth.signOut();SESSION=null;renderAcct()};
+$('#acctPortal').onclick=async()=>{try{const j=await api({action:'portal'});location.href=j.url}catch(e){$('#acctStatus').textContent=e.message}};
+document.querySelectorAll('.buy').forEach(b=>b.onclick=()=>buy(b.dataset.sku));
+setTimeout(initAuth,0);
+$('#pullGranit').onclick=pullGranit;$('#pullVgsi').onclick=pullVgsi;$('#pullListings').onclick=pullListings;
+$('#l-api').onchange=e=>{S.api=e.target.value.trim();save()};
+
+setMode(S.mode);fillSearch();fillForm(null);
+if(S.parcels.length)go('results');
+})();
+</script>
+</body>
+</html>
