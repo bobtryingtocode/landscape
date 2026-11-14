@@ -522,7 +522,7 @@ async function vgsiParcel(town,pid){const h=await webFetch('https://gis.vgsi.com
 async function mcpApi(b){switch(b.action){
  case 'lookup':{const m=(b.address||'').trim().toUpperCase().match(/^(\d+[A-Z]?)\s+(.+)$/);const num=m?m[1]:'',street=m?m[2]:(b.address||'').trim().toUpperCase();const list=await vgsiStreet(b.town,street);const want=(num+' '+street).trim();const hit=list.find(p=>p.address.toUpperCase()===want)||list.find(p=>p.address.toUpperCase().startsWith(num+' ')&&p.address.toUpperCase().includes(street));if(!hit)throw new Error('No assessor card found for '+want);return vgsiParcel(b.town,hit.pid)}
  case 'listings':{const h=await webFetch(b.url,'html');const found=parseListingsHtml(h,b.url);if(!found.length)throw new Error('No listings with an address and price were found on that page.');return {listings:found}}
- default:throw new Error('unknown action')}}
+ default:throw new Error('Accounts and nationwide search run on the hosted app (your Vercel address), not inside this preview.')}}
 async function api(body){const explicit=($('#l-api').value||S.api||'').trim();await MCPready;if(MCP&&!explicit){try{return await mcpApi(body)}catch(e){throw new Error(mcpErr(e))}}
  const u=apiUrl();if(!u)throw new Error('Open the hosted app (or enter the server address under "How this works") to use owner and listing pulls.');const hdr={'Content-Type':'application/json'};if(SESSION&&SESSION.access_token)hdr.Authorization='Bearer '+SESSION.access_token;const r=await fetch(u,{method:'POST',headers:hdr,body:JSON.stringify(body)});const j=await r.json().catch(()=>({error:'Bad response'}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{data:j});return j}
 async function granitFetch(q){try{const r=await fetch(GRANIT+'?'+q);return await r.json()}catch(e){await MCPready;if(!MCP)throw e;try{const t=await webFetch(GRANIT+'?'+q,'text');return JSON.parse(t)}catch(e2){throw new Error(mcpErr(e2))}}}
@@ -564,7 +564,7 @@ function parseListingsHtml(html,pageUrl){const out=[],seen=new Set();const add=l
 // ---- Accounts, credits, nationwide search (hosted app) ----
 let SBC=null,SESSION=null;
 function cfgOk(){const c=window.LS_CONFIG||{};return c.supabaseUrl&&!/^__/.test(c.supabaseUrl)&&c.supabaseAnonKey&&!/^__/.test(c.supabaseAnonKey)}
-async function initAuth(){if(!cfgOk()||!window.supabase){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
+async function initAuth(){if(!cfgOk()||!window.supabase||/claude\.ai$/.test(location.hostname)||location.protocol==='file:'){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
  SBC=supabase.createClient(window.LS_CONFIG.supabaseUrl,window.LS_CONFIG.supabaseAnonKey);const {data}=await SBC.auth.getSession();SESSION=data.session;SBC.auth.onAuthStateChange((_e,sess)=>{SESSION=sess;renderAcct()});renderAcct();
  const q=new URLSearchParams(location.search);if(q.get('paid')){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000);history.replaceState(null,'',location.pathname)}}
 async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');return}
