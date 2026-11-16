@@ -27,13 +27,23 @@ create table if not exists public.credit_ledger (
 -- A Stripe event delivered twice must not credit twice.
 create unique index if not exists credit_ledger_ref_unique on public.credit_ledger (ref) where ref like 'evt_%';
 
+-- A nationwide search is a background job: credits are reserved at start and settled when it finishes.
 create table if not exists public.searches (
   id bigserial primary key,
   user_id uuid not null references public.profiles(user_id) on delete cascade,
+  kind text not null default 'export',          -- export | lookup
+  run_id text,                                  -- Apify run id
+  dataset_id text,
+  status text not null default 'running',       -- running | done | failed
+  reserved integer not null default 0,          -- credits held while it runs
+  records integer not null default 0,           -- credits actually charged
+  ref text,
   params jsonb,
-  records integer not null default 0,
+  result jsonb,                                 -- the mapped parcels, so a refreshed page can re-read them
+  notice text,
   created_at timestamptz not null default now()
 );
+create index if not exists searches_user_status_idx on public.searches (user_id, status);
 
 alter table public.profiles enable row level security;
 alter table public.credit_ledger enable row level security;

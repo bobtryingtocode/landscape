@@ -73,4 +73,38 @@ function verifyStripeSignature(raw, header, secret) {
   try { return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1)); } catch (_) { return false; }
 }
 
-module.exports = { PLANS, env, need, sb, rpc, userFromReq, isOwner, getProfile, publicProfile, stripe, verifyStripeSignature };
+
+// ---------- Apify (REST) ----------
+async function apifyStart(actor, input, opts = {}) {
+  const q = new URLSearchParams({ token: need('APIFY_TOKEN') });
+  if (opts.timeout) q.set('timeout', String(opts.timeout));
+  if (opts.maxTotalChargeUsd) q.set('maxTotalChargeUsd', String(opts.maxTotalChargeUsd));
+  if (opts.memory) q.set('memory', String(opts.memory));
+  const r = await fetch(`https://api.apify.com/v2/acts/${actor}/runs?${q}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Records source could not start (${r.status}): ${(j.error && j.error.message) || 'check APIFY_TOKEN'}`);
+  return j.data; // {id, status, defaultDatasetId, ...}
+}
+async function apifyRun(runId) {
+  const r = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${need('APIFY_TOKEN')}`);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Could not check the search (${r.status})`);
+  return j.data;
+}
+async function apifyItems(datasetId, limit = 1000) {
+  const r = await fetch(`https://api.apify.com/v2/datasets/${datasetId}/items?token=${need('APIFY_TOKEN')}&clean=true&format=json&limit=${limit}`);
+  if (!r.ok) throw new Error(`Could not read the results (${r.status})`);
+  return r.json();
+}
+// Start a run and wait for it inside one request (only for runs that finish in well under a minute).
+async function apifyRunSync(actor, input, opts = {}) {
+  const q = new URLSearchParams({ token: need('APIFY_TOKEN'), timeout: String(opts.timeout || 60), clean: 'true', format: 'json' });
+  if (opts.maxTotalChargeUsd) q.set('maxTotalChargeUsd', String(opts.maxTotalChargeUsd));
+  const r = await fetch(`https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?${q}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  if (r.status === 408) throw new Error('The records source took too long to answer. Try again in a minute.');
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(`Records source error (${r.status}): ${(j && j.error && j.error.message) || 'check APIFY_TOKEN'}`);
+  return Array.isArray(j) ? j : [];
+}
+
+module.exports = { apifyStart, apifyRun, apifyItems, apifyRunSync, PLANS, env, need, sb, rpc, userFromReq, isOwner, getProfile, publicProfile, stripe, verifyStripeSignature };
