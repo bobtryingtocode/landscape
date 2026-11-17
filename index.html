@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Landscape — find the home the market isn't showing you</title>
+<meta name="theme-color" content="#1f3d2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Landscape">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="description" content="Research land and homes on and off the market, rate every deal, score how likely an owner is to sell, and build creative offers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -24,7 +31,7 @@ label{display:block;font-size:.88rem;font-weight:500;color:var(--muted);margin-b
 .btn{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--pine);background:var(--pine);color:#fff;border-radius:var(--rs);padding:.6rem 1rem;font-weight:600;min-height:42px;text-decoration:none}
 .btn:hover{background:var(--pine-deep)}.btn.ghost{background:transparent;color:var(--pine)}.btn.ghost:hover{background:var(--fill)}
 .btn.sm{padding:.35rem .7rem;min-height:34px;font-size:.88rem}.btn.warn{background:var(--alert);border-color:var(--alert)}
-.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem}
+.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:1rem;padding:calc(.7rem + env(safe-area-inset-top)) 1.2rem .7rem}
 .brand{font-family:Fraunces,Georgia,serif;font-size:1.35rem;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem}
 .brand svg{width:26px;height:26px}
 .nav{display:flex;gap:.2rem;margin-left:1rem}
@@ -87,6 +94,7 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
 @media(max-width:899px){
  .nav{display:none}.mode{margin-left:auto}
  .mnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--line);z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+ .wrap{padding-bottom:calc(4.5rem + env(safe-area-inset-bottom))}
  .mnav button{border:0;background:none;padding:.55rem .2rem .5rem;font-size:.72rem;color:var(--muted);display:grid;justify-items:center;gap:.15rem;font-weight:500}
  .mnav button svg{width:22px;height:22px}.mnav button.on{color:var(--pine)}
  .pcard{grid-template-columns:auto 1fr}.pcard .right{grid-column:2;text-align:left}
@@ -480,7 +488,8 @@ function esc(s){return (s==null?'':s).toString().replace(/[&<>"]/g,c=>({'&':'&am
 const GRANIT='https://nhgeodata.unh.edu/hosting/rest/services/Hosted/CAD_ParcelMosaic/FeatureServer/1/query';
 const SLU={'11':'Single-family home','12':'Multi-family 2-4','13':'Apartments 5+','14':'Condo','17':'Manufactured home w/ land','18':'Manufactured home','19':'Other residential','22':'Residential land','23':'Commercial land','24':'Industrial land','33':'Commercial','34':'Industrial'};
 const normA=a=>(a||'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-function apiUrl(){const b=($('#l-api').value||S.api||'').trim();if(b)return b.replace(/\/$/,'')+'/api/landscape';if(location.protocol==='file:')return '';return location.origin+'/api/landscape'}
+const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());const CAP=p=>(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins[p])||null;
+function apiUrl(){const b=($('#l-api').value||S.api||'').trim();if(b)return b.replace(/\/$/,'')+'/api/landscape';const cfg=(window.LS_CONFIG&&window.LS_CONFIG.apiBase)||'';if(cfg&&!/^__/.test(cfg))return cfg.replace(/\/$/,'')+'/api/landscape';if(location.protocol==='file:'||/^capacitor/.test(location.protocol))return '';return location.origin+'/api/landscape'}
 // --- Connector transport (published artifact): runs the same pulls through the viewer's Apify connector ---
 let MCP=null,MCPready=(async()=>{try{if(window.claude&&claude.use){MCP=await claude.use('mcp')}}catch(e){MCP=null}return MCP})();
 const strip=s=>String(s||'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
@@ -570,15 +579,22 @@ function parseListingsHtml(html,pageUrl){const out=[],seen=new Set();const add=l
 // ---- Accounts, credits, nationwide search (hosted app) ----
 let SBC=null,SESSION=null;
 function cfgOk(){const c=window.LS_CONFIG||{};return c.supabaseUrl&&!/^__/.test(c.supabaseUrl)&&c.supabaseAnonKey&&!/^__/.test(c.supabaseAnonKey)}
-async function initAuth(){if(!cfgOk()||!window.supabase||/claude\.ai$/.test(location.hostname)||location.protocol==='file:'){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
+async function initAuth(){if(!cfgOk()||!window.supabase||/claude\.ai$/.test(location.hostname)||(location.protocol==='file:'&&!NATIVE)){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
  SBC=supabase.createClient(window.LS_CONFIG.supabaseUrl,window.LS_CONFIG.supabaseAnonKey);const {data}=await SBC.auth.getSession();SESSION=data.session;SBC.auth.onAuthStateChange((_e,sess)=>{SESSION=sess;renderAcct()});renderAcct();setTimeout(resumeJob,500);
- const q=new URLSearchParams(location.search);if(q.get('paid')){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000);history.replaceState(null,'',location.pathname)}}
+ const q=new URLSearchParams(location.search);if(q.get('paid')){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000);if(q.get('native')){const b=document.createElement('div');b.className='card';b.style.cssText='position:fixed;left:1rem;right:1rem;bottom:5rem;z-index:50;text-align:center';b.innerHTML='<p><b>Payment received.</b></p><a class="btn" href="landscape://paid">Back to the Landscape app</a>';document.body.appendChild(b)}history.replaceState(null,'',location.pathname)}
+ if(NATIVE&&CAP('App')){CAP('App').addListener('appUrlOpen',e=>handleAppUrl(e&&e.url));CAP('App').getLaunchUrl&&CAP('App').getLaunchUrl().then(r=>r&&r.url&&handleAppUrl(r.url)).catch(()=>{})}}
+async function handleAppUrl(url){if(!url)return;try{const u=new URL(url.replace(/^landscape:\/\//,'https://landscape.app/'));const hash=new URLSearchParams(u.hash.replace(/^#/,''));
+  if(hash.get('access_token')&&hash.get('refresh_token')){const {error}=await SBC.auth.setSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')});if(error)throw error;toast('Signed in');return}
+  if(u.searchParams.get('code')){const {error}=await SBC.auth.exchangeCodeForSession(u.searchParams.get('code'));if(error)throw error;toast('Signed in');return}
+  if(/paid/.test(u.pathname)){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000)}}catch(e){toast('Sign-in link problem: '+(e.message||e))}}
+async function openExternal(url){const B=CAP('Browser');if(NATIVE&&B){await B.open({url,presentationStyle:'popover'})}else location.href=url}
 async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');return}
  inn.style.display='';out.style.display='none';$('#acct-who').textContent=SESSION.user.email;
  try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn')}catch(e){$('#acctStatus').textContent=e.message}}
 function cpill(t,tone){const e=$('#creditPill');e.textContent=t;e.style.background=tone==='ok'?'#d9f2e1':tone==='warn'?'#fff0c2':'var(--line,#eee)'}
-async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const {error}=await SBC.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});toast(error?error.message:'Check your email for the sign-in link')}
-async function buy(sku){try{$('#acctStatus').textContent='Opening checkout…';const j=await api({action:'checkout',sku});location.href=j.url}catch(e){$('#acctStatus').textContent=e.message}}
+async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const redirect=NATIVE?'landscape://auth':location.origin+location.pathname;const {error}=await SBC.auth.signInWithOtp({email,options:{emailRedirectTo:redirect}});if(error){toast(error.message);return}
+ toast('Check your email');let box=$('#otpBox');if(!box){box=document.createElement('div');box.id='otpBox';box.innerHTML='<div class="row" style="margin-top:.5rem"><div class="field"><label>Or type the code from the email</label><input id="acct-code" inputmode="numeric" placeholder="6-digit code"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn ghost" id="acctVerify" style="width:100%">Sign in with code</button></div></div><p class="small muted">Tap the link in the email, or enter the code it contains.</p>';$('#acctOut').appendChild(box);$('#acctVerify').onclick=async()=>{const token=$('#acct-code').value.trim();if(!token)return;const {error}=await SBC.auth.verifyOtp({email,token,type:'email'});toast(error?error.message:'Signed in')}}}
+async function buy(sku){try{$('#acctStatus').textContent='Opening checkout…';const j=await api({action:'checkout',sku,native:NATIVE?1:0});await openExternal(j.url);$('#acctStatus').textContent=NATIVE?'Finish paying in the browser, then come back here.':''}catch(e){$('#acctStatus').textContent=e.message}}
 function nationParams(){const st=$('#n-state').value.trim().toUpperCase(),county=$('#n-county').value.trim(),city=$('#n-city').value.trim(),zip=$('#n-zip').value.trim();
  if(!st){toast('Enter a state');return null}if(!county&&!city&&!zip){toast('Enter a county, a town or a ZIP code');return null}
  return {state:st,county,city,zip,land_use:$('#n-use').value,owner_type:$('#n-owner').value,absentee_only:$('#n-abs').value==='1',min_value:$('#n-minv').value,max_value:$('#n-maxv').value,count:+$('#n-count').value||20}}
@@ -600,9 +616,11 @@ async function showCoverage(ev){ev.preventDefault();const out=$('#covOut');if(ou
   out.innerHTML='<b>'+states.length+' states</b> — New Hampshire is free through the pull above.<br>'+states.map(st=>'<b>'+st+'</b>: '+by[st].map(r=>r.counties+(r.has_owner?'':' (no owner names)')+(r.has_mail?'':' (no mailing address)')).join('; ')).join('<br>')}catch(e){out.textContent=e.message}}
 $('#previewNation').onclick=previewNation;$('#covLink').onclick=showCoverage;
 $('#findNation').onclick=findNation;$('#acctSend').onclick=sendLink;$('#acctOutBtn').onclick=async()=>{await SBC.auth.signOut();SESSION=null;renderAcct()};
-$('#acctPortal').onclick=async()=>{try{const j=await api({action:'portal'});location.href=j.url}catch(e){$('#acctStatus').textContent=e.message}};
+$('#acctPortal').onclick=async()=>{try{const j=await api({action:'portal'});await openExternal(j.url)}catch(e){$('#acctStatus').textContent=e.message}};
 document.querySelectorAll('.buy').forEach(b=>b.onclick=()=>buy(b.dataset.sku));
 setTimeout(initAuth,0);
+if(NATIVE)document.addEventListener('click',e=>{const a=e.target.closest('a[href^="http"]');if(a&&a.target==='_blank'){e.preventDefault();openExternal(a.href)}});
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai$/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#pullGranit').onclick=pullGranit;$('#pullVgsi').onclick=pullVgsi;$('#pullListings').onclick=pullListings;
 $('#l-api').onchange=e=>{S.api=e.target.value.trim();save()};
 

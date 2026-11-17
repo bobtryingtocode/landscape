@@ -200,13 +200,13 @@ async function refund(user, count, ref) {
   if (L.isOwner(user.email) || !count) return;
   await L.rpc('add_credits', { p_user: user.id, p_amount: count, p_reason: 'refund_short_results', p_ref: ref || '' });
 }
-async function checkout(user, sku, origin) {
+async function checkout(user, sku, origin, native) {
   const plan = L.PLANS[sku]; if (!plan) throw new Error('Unknown plan.');
   const prof = await L.getProfile(user);
   const base = (L.env('APP_URL') || origin || '').replace(/\/$/, '');
   const body = {
     mode: plan.kind === 'plan' ? 'subscription' : 'payment',
-    success_url: `${base}/?paid=${sku}`, cancel_url: `${base}/?canceled=1`,
+    success_url: `${base}/?paid=${sku}${native ? '&native=1' : ''}`, cancel_url: `${base}/?canceled=1${native ? '&native=1' : ''}`,
     client_reference_id: user.id, metadata: { user_id: user.id, sku, credits: plan.credits },
     line_items: { 0: { quantity: 1, price_data: { currency: 'usd', unit_amount: plan.amount, product_data: { name: plan.name }, ...(plan.kind === 'plan' ? { recurring: { interval: 'month' } } : {}) } } },
     allow_promotion_codes: 'true',
@@ -246,7 +246,7 @@ module.exports = async (req, res) => {
       // ---- account ----
       case 'me': { const u = await requireUser(req); return res.json(L.publicProfile(await L.getProfile(u), u)); }
       case 'plans': return res.json({ plans: Object.entries(L.PLANS).map(([sku, p]) => ({ sku, kind: p.kind, name: p.name, price: p.amount / 100, credits: p.credits })) });
-      case 'checkout': { const u = await requireUser(req); return res.json(await checkout(u, b.sku, origin)); }
+      case 'checkout': { const u = await requireUser(req); return res.json(await checkout(u, b.sku, origin, !!b.native)); }
       case 'portal': { const u = await requireUser(req); return res.json(await portal(u, origin)); }
       // ---- nationwide: coverage + free preview ----
       case 'coverage': return res.json({ coverage: await coverage() });
