@@ -1,0 +1,9 @@
+{
+  "name": "landscape",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Landscape — property research for land buyers. Static app + Vercel functions on Neon.",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  }
+}

@@ -1,6 +1,7 @@
 // Landscape API — runs on Vercel at /api/landscape.
 // Free path (no login):  NH assessor cards from Vision/VGSI, public listing pages parsed for address + price.
 // Paid path (login):     nationwide parcel + owner records from county assessor feeds via Apify, metered in credits (1 credit = 1 parcel record).
+// Accounts, credits and search jobs live in Neon (Postgres); sign-in is a 6-digit emailed code.
 // Owner data is public record, used for purchase inquiries only.
 const L = require('./_lib');
 
@@ -191,8 +192,7 @@ async function requireUser(req) {
 }
 async function spend(user, count, ref) {
   if (L.isOwner(user.email)) return { credits: 999999 };
-  const r = await L.rpc('spend_credits', { p_user: user.id, p_amount: count, p_reason: 'nationwide_search', p_ref: ref || '' });
-  const row = Array.isArray(r) ? r[0] : r;
+  const row = await L.rpc('spend_credits', { p_user: user.id, p_amount: count, p_reason: 'nationwide_search', p_ref: ref || '' });
   if (!row || row.ok === false) { const e = new Error(`Not enough credits — this search needs ${count} and you have ${row ? row.credits : 0}. Buy a pack or pick a plan below.`); e.status = 402; throw e; }
   return row;
 }
@@ -244,6 +244,9 @@ module.exports = async (req, res) => {
       // ---- free: listings from any public listings page ----
       case 'listings': return res.json({ listings: await listings(b.url) });
       // ---- account ----
+      case 'login_start': return res.json(await L.startLogin(b.email));
+      case 'login_verify': { const { token, profile } = await L.verifyLogin(b.email, b.code); return res.json({ token, me: L.publicProfile(profile, { email: profile.email }) }); }
+      case 'logout': await L.logout(req); return res.json({ ok: true });
       case 'me': { const u = await requireUser(req); return res.json(L.publicProfile(await L.getProfile(u), u)); }
       case 'plans': return res.json({ plans: Object.entries(L.PLANS).map(([sku, p]) => ({ sku, kind: p.kind, name: p.name, price: p.amount / 100, credits: p.credits })) });
       case 'checkout': { const u = await requireUser(req); return res.json(await checkout(u, b.sku, origin, !!b.native)); }
@@ -267,12 +270,13 @@ module.exports = async (req, res) => {
         let run;
         try { run = await L.apifyStart(EXPORT_ACTOR, input, { timeout: 600, maxTotalChargeUsd: Math.round((count * EXPORT_COST + 0.1) * 100) / 100 }); }
         catch (e) { await refund(u, count, ref).catch(() => {}); throw e; }
-        const job = await L.sb('searches', { method: 'POST', body: { user_id: u.id, kind: 'export', run_id: run.id, dataset_id: run.defaultDatasetId, status: 'running', reserved: count, ref, params: { state: b.state, county: b.county, city: b.city, zip: b.zip, land_use: b.land_use, absentee_only: !!b.absentee_only, owner_type: b.owner_type, min_value: b.min_value, max_value: b.max_value } } });
+        const params = JSON.stringify({ state: b.state, county: b.county, city: b.city, zip: b.zip, land_use: b.land_use, absentee_only: !!b.absentee_only, owner_type: b.owner_type, min_value: b.min_value, max_value: b.max_value });
+        const job = await L.q`insert into searches (user_id, kind, run_id, dataset_id, status, reserved, ref, params) values (${u.id}, 'export', ${run.id}, ${run.defaultDatasetId}, 'running', ${count}, ${ref}, ${params}::jsonb) returning id`;
         return res.json({ job: job[0].id, status: 'running' });
       }
       case 'search_poll': {
         const u = await requireUser(req);
-        const rows = await L.sb(`searches?id=eq.${parseInt(b.job)}&user_id=eq.${u.id}&select=*`); const job = rows && rows[0];
+        const rows = await L.q`select * from searches where id = ${parseInt(b.job) || 0} and user_id = ${u.id}`; const job = rows && rows[0];
         if (!job) return res.status(404).json({ error: 'Search not found.' });
         if (job.status === 'done') return res.json({ status: 'done', parcels: job.result || [], charged: job.records, requested: job.reserved, notice: job.notice || null });
         if (job.status === 'failed') return res.status(502).json({ error: job.notice || 'That search failed and your credits were returned.' });
@@ -280,7 +284,7 @@ module.exports = async (req, res) => {
         if (['READY', 'RUNNING'].includes(run.status)) return res.json({ status: 'running', started: run.startedAt });
         if (run.status !== 'SUCCEEDED') {
           await refund(u, job.reserved, job.ref).catch(() => {});
-          await L.sb(`searches?id=eq.${job.id}`, { method: 'PATCH', prefer: 'return=minimal', body: { status: 'failed', records: 0, notice: `The records source did not finish (${run.status}). Your ${job.reserved} credits were returned.` } });
+          await L.q`update searches set status = 'failed', records = 0, notice = ${`The records source did not finish (${run.status}). Your ${job.reserved} credits were returned.`} where id = ${job.id}`;
           return res.status(502).json({ error: `The records source did not finish (${run.status}). Your ${job.reserved} credits were returned.` });
         }
         const items = await L.apifyItems(job.dataset_id || run.defaultDatasetId);
@@ -289,7 +293,7 @@ module.exports = async (req, res) => {
         const charged = Math.min(job.reserved, parcels.length);
         if (charged < job.reserved) await refund(u, job.reserved - charged, job.ref).catch(() => {});
         const noticeText = notice ? notice.notice : (parcels.length ? null : 'No parcels matched those filters in that area.');
-        await L.sb(`searches?id=eq.${job.id}`, { method: 'PATCH', prefer: 'return=minimal', body: { status: 'done', records: charged, result: parcels, notice: noticeText } });
+        await L.q`update searches set status = 'done', records = ${charged}, result = ${JSON.stringify(parcels)}::jsonb, notice = ${noticeText} where id = ${job.id}`;
         const prof = await L.getProfile(u);
         return res.json({ status: 'done', parcels, charged, requested: job.reserved, notice: noticeText, credits: L.isOwner(u.email) ? 999999 : prof.credits });
       }

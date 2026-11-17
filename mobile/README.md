@@ -1,7 +1,7 @@
 # Landscape for iPhone
 
-The web app inside a native iOS shell (Capacitor). Same features, same account, plus native sign-in links,
-an in-app browser for assessor cards and checkout, and the share sheet.
+The web app inside a native iOS shell (Capacitor). Same features, same account, plus an in-app browser
+for assessor cards and checkout, the share sheet, and a return link after checkout.
 
 ## One-time setup on a Mac
 1. Install **Xcode** from the Mac App Store (free, ~15 GB), open it once and accept the license.
@@ -15,8 +15,7 @@ an in-app browser for assessor cards and checkout, and the share sheet.
    ```
    Xcode opens. Select the **App** target → Signing & Capabilities → pick your Team (your Apple ID works for
    running on your own phone). Plug in your iPhone, choose it at the top, press ▶.
-3. In Supabase → Authentication → URL configuration, add `landscape://auth` to **Redirect URLs** so sign-in
-   links open the app.
+3. Sign-in uses a 6-digit emailed code, so nothing else to configure for the app.
 
 ## Every time the web app changes
 ```

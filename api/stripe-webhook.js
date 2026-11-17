@@ -9,12 +9,16 @@ module.exports.config = { api: { bodyParser: false } };
 function rawBody(req) {
   return new Promise((resolve, reject) => { let d = ''; req.setEncoding('utf8'); req.on('data', c => { d += c; }); req.on('end', () => resolve(d)); req.on('error', reject); });
 }
-async function profileBy(field, value) {
-  const rows = await L.sb(`profiles?${field}=eq.${encodeURIComponent(value)}&select=*`);
-  return rows && rows[0];
-}
+async function profileBySubscription(subId) { const rows = await L.q`select * from profiles where stripe_subscription_id = ${subId}`; return rows[0]; }
 async function setProfile(userId, patch) {
-  await L.sb(`profiles?user_id=eq.${userId}`, { method: 'PATCH', prefer: 'return=minimal', body: patch });
+  const p = Object.assign({ stripe_customer_id: undefined, plan: undefined, stripe_subscription_id: undefined, renews_at: undefined }, patch);
+  await L.q`update profiles set
+      stripe_customer_id = coalesce(${p.stripe_customer_id ?? null}, stripe_customer_id),
+      plan = coalesce(${p.plan ?? null}, plan),
+      stripe_subscription_id = case when ${'stripe_subscription_id' in patch} then ${p.stripe_subscription_id ?? null} else stripe_subscription_id end,
+      renews_at = case when ${'renews_at' in patch} then ${p.renews_at ?? null}::timestamptz else renews_at end,
+      updated_at = now()
+    where user_id = ${userId}`;
 }
 
 module.exports = async (req, res) => {
@@ -42,7 +46,7 @@ module.exports = async (req, res) => {
       const subId = typeof o.subscription === 'string' ? o.subscription : (o.subscription && o.subscription.id);
       const reason = o.billing_reason || '';
       if (subId && /subscription_cycle|subscription_update/.test(reason)) {
-        const prof = await profileBy('stripe_subscription_id', subId);
+        const prof = await profileBySubscription(subId);
         const plan = prof && L.PLANS[prof.plan];
         if (prof && plan) {
           const end = (o.lines && o.lines.data && o.lines.data[0] && o.lines.data[0].period && o.lines.data[0].period.end) || null;
@@ -51,7 +55,7 @@ module.exports = async (req, res) => {
         }
       }
     } else if (ev.type === 'customer.subscription.deleted') {
-      const prof = await profileBy('stripe_subscription_id', o.id);
+      const prof = await profileBySubscription(o.id);
       if (prof) await setProfile(prof.user_id, { plan: 'free', stripe_subscription_id: null, renews_at: null });
     }
     return res.json({ received: true });

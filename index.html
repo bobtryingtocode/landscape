@@ -104,8 +104,7 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.top,.mnav,.noprint{display:none!important}.wrap{padding:0}}
 </style>
-<script>window.LS_CONFIG={supabaseUrl:"https://glhdrtscwjnfwbzyquii.supabase.co",supabaseAnonKey:"sb_publishable_8trlTktUrUBK_5nn3q5EPA_VyO2XpG4"};</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>window.LS_CONFIG={};</script>
 </head>
 <body>
 <header class="top">
@@ -244,7 +243,9 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
    </div>
    <div class="card" style="margin-top:1rem" id="acctCard">
     <h2>Account &amp; credits</h2>
-    <div id="acctOut"><div class="row"><div class="field"><label>Email</label><input id="acct-email" type="email" placeholder="you@example.com"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="acctSend" style="width:100%">Email me a sign-in link</button></div></div><p class="small muted">No password. Tap the link in the email and you are in.</p></div>
+    <div id="acctOut"><div class="row"><div class="field"><label>Email</label><input id="acct-email" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="acctSend" style="width:100%">Email me a sign-in code</button></div></div>
+     <div id="otpBox" style="display:none"><div class="row"><div class="field"><label>Code from the email</label><input id="acct-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digits"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn" id="acctVerify" style="width:100%">Sign in</button></div></div></div>
+     <p class="small muted" id="acctHint">No password. We email you a 6-digit code; it works for 10 minutes.</p></div>
     <div id="acctIn" style="display:none">
      <p class="small">Signed in as <b id="acct-who"></b> · <span id="acct-plan"></span> · <b id="acct-credits"></b> credits <button class="btn ghost small" id="acctOutBtn" type="button">Sign out</button></p>
      <div class="small muted" style="margin:.4rem 0">Pay as you go</div>
@@ -536,7 +537,7 @@ async function mcpApi(b){switch(b.action){
  case 'listings':{const h=await webFetch(b.url,'html');const found=parseListingsHtml(h,b.url);if(!found.length)throw new Error('No listings with an address and price were found on that page.');return {listings:found}}
  default:throw new Error('Accounts and nationwide search run on the hosted app (your Vercel address), not inside this preview.')}}
 async function api(body){const explicit=($('#l-api').value||S.api||'').trim();await MCPready;if(MCP&&!explicit){try{return await mcpApi(body)}catch(e){throw new Error(mcpErr(e))}}
- const u=apiUrl();if(!u)throw new Error('Open the hosted app (or enter the server address under "How this works") to use owner and listing pulls.');const hdr={'Content-Type':'application/json'};if(SESSION&&SESSION.access_token)hdr.Authorization='Bearer '+SESSION.access_token;const r=await fetch(u,{method:'POST',headers:hdr,body:JSON.stringify(body)});const j=await r.json().catch(()=>({error:'Bad response'}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{data:j});return j}
+ const u=apiUrl();if(!u)throw new Error('Open the hosted app (or enter the server address under "How this works") to use owner and listing pulls.');const hdr={'Content-Type':'application/json'};if(SESSION&&SESSION.token)hdr.Authorization='Bearer '+SESSION.token;const r=await fetch(u,{method:'POST',headers:hdr,body:JSON.stringify(body)});const j=await r.json().catch(()=>({error:'Bad response'}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{data:j});return j}
 async function granitFetch(q){try{const r=await fetch(GRANIT+'?'+q);return await r.json()}catch(e){await MCPready;if(!MCP)throw e;try{const t=await webFetch(GRANIT+'?'+q,'text');return JSON.parse(t)}catch(e2){throw new Error(mcpErr(e2))}}}
 function status(m){$('#liveStatus').textContent=m;if(/error|failed|not |could/i.test(m))toast(m.slice(0,120))}
 function liveTown(){const t=$('#l-town').value.trim()||S.search.town,st=($('#l-state').value.trim()||S.search.state||'NH').toUpperCase();return {t,st}}
@@ -577,23 +578,27 @@ function parseListingsHtml(html,pageUrl){const out=[],seen=new Set();const add=l
  return out}
 
 // ---- Accounts, credits, nationwide search (hosted app) ----
-let SBC=null,SESSION=null;
-function cfgOk(){const c=window.LS_CONFIG||{};return c.supabaseUrl&&!/^__/.test(c.supabaseUrl)&&c.supabaseAnonKey&&!/^__/.test(c.supabaseAnonKey)}
-async function initAuth(){if(!cfgOk()||!window.supabase||/claude\.ai$/.test(location.hostname)||(location.protocol==='file:'&&!NATIVE)){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
- SBC=supabase.createClient(window.LS_CONFIG.supabaseUrl,window.LS_CONFIG.supabaseAnonKey);const {data}=await SBC.auth.getSession();SESSION=data.session;SBC.auth.onAuthStateChange((_e,sess)=>{SESSION=sess;renderAcct()});renderAcct();setTimeout(resumeJob,500);
+let SESSION=null;try{SESSION=JSON.parse(localStorage.getItem('ls_session')||'null')}catch(_){SESSION=null}
+function setSession(sess){SESSION=sess;try{if(sess)localStorage.setItem('ls_session',JSON.stringify(sess));else localStorage.removeItem('ls_session')}catch(_){}}
+function hostedOk(){return !/claude\.ai$/.test(location.hostname)&&(location.protocol!=='file:'||NATIVE)&&!!apiUrl()}
+async function initAuth(){if(!hostedOk()){$('#acctCard').querySelector('#acctOut').innerHTML='<p class="small muted">Accounts are available on the hosted app.</p>';return}
+ renderAcct();setTimeout(resumeJob,500);
  const q=new URLSearchParams(location.search);if(q.get('paid')){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000);if(q.get('native')){const b=document.createElement('div');b.className='card';b.style.cssText='position:fixed;left:1rem;right:1rem;bottom:5rem;z-index:50;text-align:center';b.innerHTML='<p><b>Payment received.</b></p><a class="btn" href="landscape://paid">Back to the Landscape app</a>';document.body.appendChild(b)}history.replaceState(null,'',location.pathname)}
  if(NATIVE&&CAP('App')){CAP('App').addListener('appUrlOpen',e=>handleAppUrl(e&&e.url));CAP('App').getLaunchUrl&&CAP('App').getLaunchUrl().then(r=>r&&r.url&&handleAppUrl(r.url)).catch(()=>{})}}
-async function handleAppUrl(url){if(!url)return;try{const u=new URL(url.replace(/^landscape:\/\//,'https://landscape.app/'));const hash=new URLSearchParams(u.hash.replace(/^#/,''));
-  if(hash.get('access_token')&&hash.get('refresh_token')){const {error}=await SBC.auth.setSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')});if(error)throw error;toast('Signed in');return}
-  if(u.searchParams.get('code')){const {error}=await SBC.auth.exchangeCodeForSession(u.searchParams.get('code'));if(error)throw error;toast('Signed in');return}
-  if(/paid/.test(u.pathname)){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000)}}catch(e){toast('Sign-in link problem: '+(e.message||e))}}
+function handleAppUrl(url){if(url&&/paid/.test(url)){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000)}}
 async function openExternal(url){const B=CAP('Browser');if(NATIVE&&B){await B.open({url,presentationStyle:'popover'})}else location.href=url}
 async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');return}
- inn.style.display='';out.style.display='none';$('#acct-who').textContent=SESSION.user.email;
- try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn')}catch(e){$('#acctStatus').textContent=e.message}}
+ inn.style.display='';out.style.display='none';$('#acct-who').textContent=SESSION.email;
+ try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn')}
+ catch(e){if(/sign in/i.test(e.message)){setSession(null);renderAcct();toast('Your session ended — sign in again')}else $('#acctStatus').textContent=e.message}}
 function cpill(t,tone){const e=$('#creditPill');e.textContent=t;e.style.background=tone==='ok'?'#d9f2e1':tone==='warn'?'#fff0c2':'var(--line,#eee)'}
-async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const redirect=NATIVE?'landscape://auth':location.origin+location.pathname;const {error}=await SBC.auth.signInWithOtp({email,options:{emailRedirectTo:redirect}});if(error){toast(error.message);return}
- toast('Check your email');let box=$('#otpBox');if(!box){box=document.createElement('div');box.id='otpBox';box.innerHTML='<div class="row" style="margin-top:.5rem"><div class="field"><label>Or type the code from the email</label><input id="acct-code" inputmode="numeric" placeholder="6-digit code"></div><div class="field" style="display:flex;align-items:flex-end"><button class="btn ghost" id="acctVerify" style="width:100%">Sign in with code</button></div></div><p class="small muted">Tap the link in the email, or enter the code it contains.</p>';$('#acctOut').appendChild(box);$('#acctVerify').onclick=async()=>{const token=$('#acct-code').value.trim();if(!token)return;const {error}=await SBC.auth.verifyOtp({email,token,type:'email'});toast(error?error.message:'Signed in')}}}
+async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const btn=$('#acctSend');btn.disabled=true;
+ try{const j=await api({action:'login_start',email});$('#otpBox').style.display='';$('#acct-code').focus();
+  if(j.dev_code){$('#acct-code').value=j.dev_code;$('#acctHint').textContent='Email sending is not set up yet (add RESEND_API_KEY in Vercel). As the owner, your code was filled in for you.'}
+  else $('#acctHint').textContent='Code sent to '+email+'. Check spam if it takes more than a minute.';toast('Check your email')}
+ catch(e){toast(e.message)}finally{btn.disabled=false}}
+async function verifyCode(){const email=$('#acct-email').value.trim(),code=$('#acct-code').value.trim();if(!code){toast('Enter the code');return}
+ try{const j=await api({action:'login_verify',email,code});setSession({token:j.token,email:j.me.email});toast('Signed in');renderAcct();resumeJob()}catch(e){toast(e.message)}}
 async function buy(sku){try{$('#acctStatus').textContent='Opening checkout…';const j=await api({action:'checkout',sku,native:NATIVE?1:0});await openExternal(j.url);$('#acctStatus').textContent=NATIVE?'Finish paying in the browser, then come back here.':''}catch(e){$('#acctStatus').textContent=e.message}}
 function nationParams(){const st=$('#n-state').value.trim().toUpperCase(),county=$('#n-county').value.trim(),city=$('#n-city').value.trim(),zip=$('#n-zip').value.trim();
  if(!st){toast('Enter a state');return null}if(!county&&!city&&!zip){toast('Enter a county, a town or a ZIP code');return null}
@@ -615,7 +620,7 @@ async function showCoverage(ev){ev.preventDefault();const out=$('#covOut');if(ou
  try{const j=await api({action:'coverage'});const by={};for(const r of j.coverage){(by[r.state]=by[r.state]||[]).push(r)}const states=Object.keys(by).sort();
   out.innerHTML='<b>'+states.length+' states</b> — New Hampshire is free through the pull above.<br>'+states.map(st=>'<b>'+st+'</b>: '+by[st].map(r=>r.counties+(r.has_owner?'':' (no owner names)')+(r.has_mail?'':' (no mailing address)')).join('; ')).join('<br>')}catch(e){out.textContent=e.message}}
 $('#previewNation').onclick=previewNation;$('#covLink').onclick=showCoverage;
-$('#findNation').onclick=findNation;$('#acctSend').onclick=sendLink;$('#acctOutBtn').onclick=async()=>{await SBC.auth.signOut();SESSION=null;renderAcct()};
+$('#findNation').onclick=findNation;$('#acctSend').onclick=sendLink;$('#acctVerify').onclick=verifyCode;$('#acct-code').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode()});$('#acctOutBtn').onclick=async()=>{try{await api({action:'logout'})}catch(_){}setSession(null);renderAcct()};
 $('#acctPortal').onclick=async()=>{try{const j=await api({action:'portal'});await openExternal(j.url)}catch(e){$('#acctStatus').textContent=e.message}};
 document.querySelectorAll('.buy').forEach(b=>b.onclick=()=>buy(b.dataset.sku));
 setTimeout(initAuth,0);
