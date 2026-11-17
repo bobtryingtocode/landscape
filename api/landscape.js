@@ -252,9 +252,12 @@ module.exports = async (req, res) => {
       case 'checkout': { const u = await requireUser(req); return res.json(await checkout(u, b.sku, origin, !!b.native)); }
       case 'portal': { const u = await requireUser(req); return res.json(await portal(u, origin)); }
       // ---- nationwide: coverage + free preview ----
-      case 'coverage': return res.json({ coverage: await coverage() });
+      case 'coverage': { const en = L.nationwideEnabled(); if (!en.ok) return res.status(503).json({ error: 'Nationwide search is not available right now.' }); const fresh = !(coverageCache.rows && Date.now() - coverageCache.at < 24 * 3600e3); const rows = await coverage(); if (fresh) await L.recordUsage(null, 'coverage', L.COST.run_overhead).catch(() => {}); return res.json({ coverage: rows, env: L.vercelEnv() }); }
+      case 'usage': { const u = await requireUser(req); if (!L.isOwner(u.email)) return res.status(403).json({ error: 'Owner only.' }); return res.json(await L.usageSummary()); }
       case 'preview': {
-        await requireUser(req);
+        const u = await requireUser(req);
+        await L.guard(u, 'preview', L.COST.run_overhead);
+        await L.recordUsage(u, 'preview', L.COST.run_overhead);
         const items = await L.apifyRunSync(EXPORT_ACTOR, exportInput(b, 1, true), { timeout: 120, maxTotalChargeUsd: 0.05 });
         const notice = items.find(i => i.notice_type || i.notice); const cnt = items.find(i => i.count != null || i.matching != null || i.estimated_rows != null || i.total != null);
         const n = cnt ? (cnt.count ?? cnt.matching ?? cnt.estimated_rows ?? cnt.total) : null;
@@ -265,13 +268,17 @@ module.exports = async (req, res) => {
         const u = await requireUser(req);
         const count = Math.max(1, Math.min(100, parseInt(b.count) || 20));
         const input = exportInput(b, count, false);
+        const worst = count * L.COST.export_row + L.COST.run_overhead;
+        await L.guard(u, 'search', worst);
         const ref = `job/${u.id.slice(0, 8)}/${Date.now()}`;
         await spend(u, count, ref);
         let run;
         try { run = await L.apifyStart(EXPORT_ACTOR, input, { timeout: 600, maxTotalChargeUsd: Math.round((count * EXPORT_COST + 0.1) * 100) / 100 }); }
         catch (e) { await refund(u, count, ref).catch(() => {}); throw e; }
+        const usageId = await L.recordUsage(u, 'search', worst, count).catch(() => null);
         const params = JSON.stringify({ state: b.state, county: b.county, city: b.city, zip: b.zip, land_use: b.land_use, absentee_only: !!b.absentee_only, owner_type: b.owner_type, min_value: b.min_value, max_value: b.max_value });
-        const job = await L.q`insert into searches (user_id, kind, run_id, dataset_id, status, reserved, ref, params) values (${u.id}, 'export', ${run.id}, ${run.defaultDatasetId}, 'running', ${count}, ${ref}, ${params}::jsonb) returning id`;
+        const job = await L.q`insert into searches (user_id, kind, run_id, dataset_id, status, reserved, ref, params) values (${u.id}, 'export', ${run.id}, ${run.defaultDatasetId}, 'running', ${count}, ${ref}, ${JSON.stringify({ ...JSON.parse(params), usage_id: usageId })}::jsonb) returning id`;
+        if (usageId) await L.q`update usage_events set job_id = ${job[0].id} where id = ${usageId}`.catch(() => {});
         return res.json({ job: job[0].id, status: 'running' });
       }
       case 'search_poll': {
@@ -282,8 +289,10 @@ module.exports = async (req, res) => {
         if (job.status === 'failed') return res.status(502).json({ error: job.notice || 'That search failed and your credits were returned.' });
         const run = await L.apifyRun(job.run_id);
         if (['READY', 'RUNNING'].includes(run.status)) return res.json({ status: 'running', started: run.startedAt });
+        const usageId = job.params && job.params.usage_id;
         if (run.status !== 'SUCCEEDED') {
           await refund(u, job.reserved, job.ref).catch(() => {});
+          if (usageId) await L.settleUsage(usageId, L.COST.run_overhead, 0).catch(() => {});
           await L.q`update searches set status = 'failed', records = 0, notice = ${`The records source did not finish (${run.status}). Your ${job.reserved} credits were returned.`} where id = ${job.id}`;
           return res.status(502).json({ error: `The records source did not finish (${run.status}). Your ${job.reserved} credits were returned.` });
         }
@@ -293,6 +302,7 @@ module.exports = async (req, res) => {
         const charged = Math.min(job.reserved, parcels.length);
         if (charged < job.reserved) await refund(u, job.reserved - charged, job.ref).catch(() => {});
         const noticeText = notice ? notice.notice : (parcels.length ? null : 'No parcels matched those filters in that area.');
+        if (usageId) await L.settleUsage(usageId, parcels.length * L.COST.export_row + L.COST.run_overhead, parcels.length).catch(() => {});
         await L.q`update searches set status = 'done', records = ${charged}, result = ${JSON.stringify(parcels)}::jsonb, notice = ${noticeText} where id = ${job.id}`;
         const prof = await L.getProfile(u);
         return res.json({ status: 'done', parcels, charged, requested: job.reserved, notice: noticeText, credits: L.isOwner(u.email) ? 999999 : prof.credits });
@@ -301,13 +311,15 @@ module.exports = async (req, res) => {
       case 'lookup_us': {
         const u = await requireUser(req);
         const addr = String(b.address || '').trim(); if (!addr) return res.status(400).json({ error: 'address is required' });
+        await L.guard(u, 'lookup', L.COST.lookup_row + L.COST.run_overhead);
         const ref = `lookup/${u.id.slice(0, 8)}/${Date.now()}`;
         await spend(u, 1, ref);
+        const usageId = await L.recordUsage(u, 'lookup', L.COST.lookup_row + L.COST.run_overhead, 1).catch(() => null);
         let items;
         try { items = await L.apifyRunSync(LOOKUP_ACTOR, { addresses: [addr], includeHistory: true, maxRecords: 1 }, { timeout: 120, maxTotalChargeUsd: 0.1 }); }
-        catch (e) { await refund(u, 1, ref).catch(() => {}); throw e; }
+        catch (e) { await refund(u, 1, ref).catch(() => {}); if (usageId) await L.settleUsage(usageId, L.COST.run_overhead, 0).catch(() => {}); throw e; }
         const rec = items.map(mapLookupRow).filter(Boolean)[0];
-        if (!rec) { await refund(u, 1, ref).catch(() => {}); const miss = items[0] || {}; return res.status(404).json({ error: miss.error || (miss.status === 'not_covered' ? 'That county is not covered yet. Your credit was returned.' : 'No record found for that address. Your credit was returned.') }); }
+        if (!rec) { if (usageId) await L.settleUsage(usageId, L.COST.run_overhead, 0).catch(() => {}); await refund(u, 1, ref).catch(() => {}); const miss = items[0] || {}; return res.status(404).json({ error: miss.error || (miss.status === 'not_covered' ? 'That county is not covered yet. Your credit was returned.' : 'No record found for that address. Your credit was returned.') }); }
         return res.json(rec);
       }
       default: return res.status(400).json({ error: 'unknown action' });

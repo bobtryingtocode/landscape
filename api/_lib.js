@@ -12,6 +12,17 @@ const PLANS = {
   pro:     { kind: 'plan', name: 'Landscape Pro (220 candidates / month)',     amount: 4000, credits: 220 },
   max:     { kind: 'plan', name: 'Landscape Max (360 candidates / month)',     amount: 6000, credits: 360 },
 };
+// Usage limits per account plan (per calendar day, server time). Credits still cap total volume; these stop bursts.
+const LIMITS = {
+  free:    { searches_per_day: 3,  previews_per_hour: 6,  lookups_per_day: 10 },
+  starter: { searches_per_day: 10, previews_per_hour: 10, lookups_per_day: 30 },
+  pro:     { searches_per_day: 20, previews_per_hour: 15, lookups_per_day: 60 },
+  max:     { searches_per_day: 40, previews_per_hour: 20, lookups_per_day: 120 },
+  owner:   { searches_per_day: 60, previews_per_hour: 30, lookups_per_day: 200 },
+};
+// Estimated cost of each call to the records source, in dollars (what the budget counts).
+const COST = { export_row: 0.02, lookup_row: 0.05, run_overhead: 0.005 };
+const SCHEMA_VERSION = 2;
 
 const env = k => (process.env[k] || '').trim();
 const need = k => { const v = env(k); if (!v) throw new Error(`${k} is not set. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.`); return v; };
@@ -32,8 +43,11 @@ async function ensureSchema() {
   if (_schemaReady) return _schemaReady;
   _schemaReady = (async () => {
     const q = sql();
-    const have = await q`select to_regclass('public.sessions') as t`;
-    if (have[0] && have[0].t) return;
+    const have = await q`select to_regclass('public.meta') as t`;
+    if (have[0] && have[0].t) {
+      const v = await q`select value from meta where key = 'schema_version'`;
+      if (v[0] && Number(v[0].value) >= SCHEMA_VERSION) return;
+    }
     const file = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
     // Split on statement ends that are not inside a function body ($$ ... $$).
     const stmts = []; let buf = '', inBody = false;
@@ -44,6 +58,7 @@ async function ensureSchema() {
       if (!inBody && /;\s*$/.test(line)) { stmts.push(buf.trim()); buf = ''; }
     }
     for (const s of stmts) if (s) await q.query(s);
+    await q`insert into meta (key, value) values ('schema_version', ${String(SCHEMA_VERSION)}) on conflict (key) do update set value = excluded.value, updated_at = now()`;
   })().catch(e => { _schemaReady = null; throw e; });
   return _schemaReady;
 }
@@ -61,13 +76,14 @@ const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const isOwner = email => env('OWNER_EMAILS').toLowerCase().split(/[,\s]+/).filter(Boolean).includes(normEmail(email));
 
 async function userFromReq(req) {
+  // Returns {id, email, plan}; plan feeds the per-plan limits.
   const h = req.headers.authorization || req.headers.Authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!token || token.length < 20) return null;
-  const rows = await q`select s.user_id, p.email from sessions s join profiles p on p.user_id = s.user_id where s.token_hash = ${sha256(token)} and s.expires_at > now()`;
+  const rows = await q`select s.user_id, p.email, p.plan from sessions s join profiles p on p.user_id = s.user_id where s.token_hash = ${sha256(token)} and s.expires_at > now()`;
   if (!rows.length) return null;
   q`update sessions set last_seen = now() where token_hash = ${sha256(token)}`.catch(() => {});
-  return { id: rows[0].user_id, email: rows[0].email };
+  return { id: rows[0].user_id, email: rows[0].email, plan: rows[0].plan };
 }
 async function getProfile(user) {
   const rows = await q`select * from profiles where user_id = ${user.id}`;
@@ -128,6 +144,78 @@ async function sendCode(email, code) {
   return true;
 }
 
+
+// ---------- Guardrails: environment switch, dollar budgets, per-user limits ----------
+const vercelEnv = () => env('VERCEL_ENV') || 'development';
+const isProd = () => vercelEnv() === 'production';
+function budgets() {
+  // Production must opt in with a budget; preview/dev get a small default so testing can't run away either.
+  const monthly = Number(env('APIFY_MONTHLY_BUDGET_USD') || (isProd() ? 0 : 10));
+  const daily = Number(env('APIFY_DAILY_BUDGET_USD') || Math.max(1, monthly / 4));
+  return { monthly, daily };
+}
+function nationwideEnabled() {
+  if (!env('APIFY_TOKEN')) return { ok: false, why: 'APIFY_TOKEN is not set for this environment.' };
+  if (isProd() && env('NATIONWIDE_ENABLED') !== 'true') return { ok: false, why: 'Nationwide search is not switched on in production yet (set NATIONWIDE_ENABLED=true and APIFY_MONTHLY_BUDGET_USD).' };
+  if (isProd() && !(budgets().monthly > 0)) return { ok: false, why: 'Set APIFY_MONTHLY_BUDGET_USD before enabling nationwide search in production.' };
+  return { ok: true };
+}
+async function spend(kind, sinceSql) {
+  const rows = await q`select coalesce(sum(cost_usd), 0)::float as usd, count(*)::int as n from usage_events where created_at >= ${sinceSql}::timestamptz and (${kind}::text is null or kind = ${kind})`;
+  return rows[0];
+}
+const startOfMonth = () => { const d = new Date(); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString(); };
+const startOfDay = () => { const d = new Date(); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString(); };
+async function usageSummary() {
+  const [m, d] = await Promise.all([spend(null, startOfMonth()), spend(null, startOfDay())]);
+  const b = budgets();
+  const running = await q`select count(*)::int as n from searches where status = 'running' and created_at > now() - interval '1 hour'`;
+  const byKind = await q`select kind, count(*)::int as n, coalesce(sum(cost_usd),0)::float as usd, coalesce(sum(records),0)::int as records from usage_events where created_at >= ${startOfMonth()}::timestamptz group by kind order by usd desc`;
+  const topUsers = await q`select p.email, count(*)::int as n, coalesce(sum(u.cost_usd),0)::float as usd from usage_events u join profiles p on p.user_id = u.user_id where u.created_at >= ${startOfMonth()}::timestamptz group by p.email order by usd desc limit 10`;
+  return { env: vercelEnv(), enabled: nationwideEnabled(), budget: b, month: { usd: m.usd, calls: m.n }, today: { usd: d.usd, calls: d.n }, running: running[0].n, by_kind: byKind, top_users: topUsers, limits: LIMITS, cost: COST };
+}
+// Throws a friendly error when a call must not go ahead. `estimate` is the worst-case dollars this call can cost.
+async function guard(user, kind, estimate) {
+  const en = nationwideEnabled();
+  if (!en.ok) throw Object.assign(new Error(isOwner(user.email) ? en.why : 'Nationwide search is not available right now.'), { status: 503 });
+  const b = budgets();
+  const [m, d] = await Promise.all([spend(null, startOfMonth()), spend(null, startOfDay())]);
+  if (b.monthly > 0 && m.usd + estimate > b.monthly) { await alertBudget('monthly', m.usd, b.monthly).catch(() => {}); throw Object.assign(new Error(isOwner(user.email) ? `Monthly data budget reached ($${m.usd.toFixed(2)} of $${b.monthly}). Raise APIFY_MONTHLY_BUDGET_USD to continue.` : 'The records service has reached its monthly limit. Please try again after the 1st, or contact support.'), { status: 503 }); }
+  if (b.daily > 0 && d.usd + estimate > b.daily) { await alertBudget('daily', d.usd, b.daily).catch(() => {}); throw Object.assign(new Error(isOwner(user.email) ? `Daily data budget reached ($${d.usd.toFixed(2)} of $${b.daily}).` : 'The records service has reached its daily limit. Please try again tomorrow.'), { status: 503 }); }
+  const plan = isOwner(user.email) ? 'owner' : (user.plan || 'free'); const lim = LIMITS[plan] || LIMITS.free;
+  if (kind === 'search') {
+    const running = await q`select count(*)::int as n from searches where user_id = ${user.id} and status = 'running' and created_at > now() - interval '30 minutes'`;
+    if (running[0].n >= 1) throw Object.assign(new Error('You already have a search running — wait for it to finish.'), { status: 429 });
+    const today = await q`select count(*)::int as n from usage_events where user_id = ${user.id} and kind = 'search' and created_at >= ${startOfDay()}::timestamptz`;
+    if (today[0].n >= lim.searches_per_day) throw Object.assign(new Error(`Daily limit reached: ${lim.searches_per_day} searches a day on your plan. It resets at midnight UTC.`), { status: 429 });
+  }
+  if (kind === 'preview') {
+    const hr = await q`select count(*)::int as n from usage_events where user_id = ${user.id} and kind = 'preview' and created_at > now() - interval '1 hour'`;
+    if (hr[0].n >= lim.previews_per_hour) throw Object.assign(new Error(`Too many previews this hour (${lim.previews_per_hour} max on your plan).`), { status: 429 });
+  }
+  if (kind === 'lookup') {
+    const today = await q`select count(*)::int as n from usage_events where user_id = ${user.id} and kind = 'lookup' and created_at >= ${startOfDay()}::timestamptz`;
+    if (today[0].n >= lim.lookups_per_day) throw Object.assign(new Error(`Daily limit reached: ${lim.lookups_per_day} owner lookups a day on your plan.`), { status: 429 });
+  }
+  // Warn the owner once a day when 80% of the month is gone.
+  if (b.monthly > 0 && m.usd + estimate > 0.8 * b.monthly) alertBudget('monthly-80', m.usd, b.monthly).catch(() => {});
+}
+async function recordUsage(user, kind, cost, records = 0, jobId = null) {
+  const rows = await q`insert into usage_events (user_id, kind, job_id, records, cost_usd, env) values (${user ? user.id : null}, ${kind}, ${jobId}, ${records}, ${Number(cost.toFixed(4))}, ${vercelEnv()}) returning id`;
+  return rows[0].id;
+}
+async function settleUsage(eventId, cost, records) {
+  await q`update usage_events set cost_usd = ${Number(cost.toFixed(4))}, records = ${records} where id = ${eventId}`;
+}
+async function alertBudget(which, used, limit) {
+  const owners = env('OWNER_EMAILS').split(/[,\s]+/).filter(Boolean); if (!owners.length || !env('RESEND_API_KEY')) return;
+  const key = `alert:${which}:${new Date().toISOString().slice(0, 10)}`;
+  const sent = await q`insert into meta (key, value) values (${key}, 'sent') on conflict (key) do nothing returning key`;
+  if (!sent.length) return;
+  await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${env('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: env('MAIL_FROM') || 'Landscape <onboarding@resend.dev>', to: owners, subject: `Landscape: ${which} data budget at $${used.toFixed(2)} of $${limit} (${vercelEnv()})`, text: `The records source (Apify) has used $${used.toFixed(2)} of the $${limit} ${which.replace('-80', '')} budget in ${vercelEnv()}. Searches stop when the budget is reached. Adjust APIFY_MONTHLY_BUDGET_USD / APIFY_DAILY_BUDGET_USD in Vercel if that is intended.` }) }).catch(() => {});
+}
+
 // ---------- Stripe (REST, form-encoded) ----------
 function form(obj, prefix = '', out = []) {
   for (const [k, v] of Object.entries(obj)) {
@@ -183,4 +271,4 @@ async function apifyRunSync(actor, input, opts = {}) {
   return Array.isArray(j) ? j : [];
 }
 
-module.exports = { PLANS, env, need, q, rpc, ensureSchema, userFromReq, isOwner, getProfile, publicProfile, startLogin, verifyLogin, logout, stripe, verifyStripeSignature, apifyStart, apifyRun, apifyItems, apifyRunSync };
+module.exports = { PLANS, LIMITS, COST, env, need, vercelEnv, isProd, budgets, nationwideEnabled, usageSummary, guard, recordUsage, settleUsage, q, rpc, ensureSchema, userFromReq, isOwner, getProfile, publicProfile, startLogin, verifyLogin, logout, stripe, verifyStripeSignature, apifyStart, apifyRun, apifyItems, apifyRunSync };

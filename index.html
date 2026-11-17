@@ -255,6 +255,10 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
      <div class="small" id="acctStatus" style="min-height:1.2em;margin-top:.4rem"></div>
     </div>
    </div>
+   <div class="card" style="margin-top:1rem;display:none" id="usageCard">
+    <h2 style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">Usage &amp; limits <span class="small muted">(owner view)</span> <button class="btn ghost small" id="usageRefresh" type="button" style="margin-left:auto">Refresh</button></h2>
+    <div id="usageOut" class="small">Loading…</div>
+   </div>
    <div class="card" style="margin-top:1rem">
     <h2>Paste many at once</h2>
     <p class="small">Paste a CSV export from a spreadsheet, an assessor download, or a listing scrape. First row must be headers. Landscape matches these column names (any order, extras ignored):</p>
@@ -587,9 +591,9 @@ async function initAuth(){if(!hostedOk()){$('#acctCard').querySelector('#acctOut
  if(NATIVE&&CAP('App')){CAP('App').addListener('appUrlOpen',e=>handleAppUrl(e&&e.url));CAP('App').getLaunchUrl&&CAP('App').getLaunchUrl().then(r=>r&&r.url&&handleAppUrl(r.url)).catch(()=>{})}}
 function handleAppUrl(url){if(url&&/paid/.test(url)){toast('Payment received — credits will show in a moment');setTimeout(renderAcct,4000)}}
 async function openExternal(url){const B=CAP('Browser');if(NATIVE&&B){await B.open({url,presentationStyle:'popover'})}else location.href=url}
-async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');return}
+async function renderAcct(){const inn=$('#acctIn'),out=$('#acctOut');if(!SESSION){inn.style.display='none';out.style.display='';cpill('Sign in to see credits','');$('#usageCard').style.display='none';return}
  inn.style.display='';out.style.display='none';$('#acct-who').textContent=SESSION.email;
- try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn')}
+ try{const me=await api({action:'me'});$('#acct-plan').textContent=me.plan==='free'?'Pay as you go':me.plan[0].toUpperCase()+me.plan.slice(1)+' plan';$('#acct-credits').textContent=me.owner?'Unlimited':me.credits;$('#acctPortal').style.display=me.has_subscription?'':'none';cpill((me.owner?'Unlimited':me.credits)+' credits',me.credits>0||me.owner?'ok':'warn');if(me.owner){$('#usageCard').style.display='';loadUsage()}}
  catch(e){if(/sign in/i.test(e.message)){setSession(null);renderAcct();toast('Your session ended — sign in again')}else $('#acctStatus').textContent=e.message}}
 function cpill(t,tone){const e=$('#creditPill');e.textContent=t;e.style.background=tone==='ok'?'#d9f2e1':tone==='warn'?'#fff0c2':'var(--line,#eee)'}
 async function sendLink(){const email=$('#acct-email').value.trim();if(!email){toast('Enter your email');return}const btn=$('#acctSend');btn.disabled=true;
@@ -620,6 +624,15 @@ async function showCoverage(ev){ev.preventDefault();const out=$('#covOut');if(ou
  try{const j=await api({action:'coverage'});const by={};for(const r of j.coverage){(by[r.state]=by[r.state]||[]).push(r)}const states=Object.keys(by).sort();
   out.innerHTML='<b>'+states.length+' states</b> — New Hampshire is free through the pull above.<br>'+states.map(st=>'<b>'+st+'</b>: '+by[st].map(r=>r.counties+(r.has_owner?'':' (no owner names)')+(r.has_mail?'':' (no mailing address)')).join('; ')).join('<br>')}catch(e){out.textContent=e.message}}
 $('#previewNation').onclick=previewNation;$('#covLink').onclick=showCoverage;
+
+async function loadUsage(){const out=$('#usageOut');try{const u=await api({action:'usage'});const $$=n=>'$'+(+n).toFixed(2);const pct=u.budget.monthly?Math.min(100,Math.round(100*u.month.usd/u.budget.monthly)):0;
+  out.innerHTML='<div class="row"><div><b>Environment:</b> '+esc(u.env)+' · <b>Nationwide search:</b> '+(u.enabled.ok?'<span style="color:#1f7a3a">on</span>':'<span style="color:#b00020">off</span> — '+esc(u.enabled.why||''))+'</div></div>'
+   +'<div style="margin:.5rem 0"><b>This month:</b> '+$$(u.month.usd)+(u.budget.monthly?' of '+$$(u.budget.monthly)+' budget':' (no budget set)')+' · '+u.month.calls+' calls · running now: '+u.running+'<div style="height:8px;background:var(--line,#eee);border-radius:4px;margin-top:.3rem"><div style="height:8px;width:'+pct+'%;background:'+(pct>80?'#b00020':'#1f7a3a')+';border-radius:4px"></div></div></div>'
+   +'<div><b>Today:</b> '+$$(u.today.usd)+(u.budget.daily?' of '+$$(u.budget.daily):'')+' · '+u.today.calls+' calls</div>'
+   +(u.by_kind.length?'<table style="margin-top:.5rem"><tr><th>Kind</th><th>Calls</th><th>Records</th><th>Est. cost</th></tr>'+u.by_kind.map(k=>'<tr><td>'+esc(k.kind)+'</td><td>'+k.n+'</td><td>'+k.records+'</td><td>'+$$(k.usd)+'</td></tr>').join('')+'</table>':'<p class="muted">No paid calls yet this month.</p>')
+   +(u.top_users.length?'<p style="margin:.5rem 0 0"><b>Top users this month:</b> '+u.top_users.map(t=>esc(t.email)+' ('+$$(t.usd)+')').join(', ')+'</p>':'')
+   +'<p class="muted" style="margin-top:.5rem">Per-plan limits — searches/day: free '+u.limits.free.searches_per_day+', starter '+u.limits.starter.searches_per_day+', pro '+u.limits.pro.searches_per_day+', max '+u.limits.max.searches_per_day+'. One search at a time per account. Costs are estimates ($'+u.cost.export_row+'/record, $'+u.cost.lookup_row+'/lookup); the hard stop is the monthly spending limit in your Apify account.</p>'}catch(e){out.textContent=e.message}}
+$('#usageRefresh').onclick=loadUsage;
 $('#findNation').onclick=findNation;$('#acctSend').onclick=sendLink;$('#acctVerify').onclick=verifyCode;$('#acct-code').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode()});$('#acctOutBtn').onclick=async()=>{try{await api({action:'logout'})}catch(_){}setSession(null);renderAcct()};
 $('#acctPortal').onclick=async()=>{try{const j=await api({action:'portal'});await openExternal(j.url)}catch(e){$('#acctStatus').textContent=e.message}};
 document.querySelectorAll('.buy').forEach(b=>b.onclick=()=>buy(b.dataset.sku));

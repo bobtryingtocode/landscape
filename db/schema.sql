@@ -1,6 +1,6 @@
 -- Landscape: accounts, sign-in codes, sessions, credits and search jobs — on Neon (Postgres).
--- The API applies this file itself on first use (every statement is idempotent), so you never
--- have to run it by hand. Kept here so you can read what the database holds.
+-- The API applies this file itself (every statement is idempotent) whenever SCHEMA_VERSION in api/_lib.js
+-- is newer than the database's, so you never have to run it by hand. Kept here so you can read what the database holds.
 
 create table if not exists profiles (
   user_id uuid primary key default gen_random_uuid(),
@@ -66,6 +66,27 @@ create table if not exists searches (
   created_at timestamptz not null default now()
 );
 create index if not exists searches_user_status_idx on searches (user_id, status);
+
+-- Schema version + small key/value store (budget alerts sent, etc.).
+create table if not exists meta (
+  key text primary key,
+  value text,
+  updated_at timestamptz not null default now()
+);
+
+-- Every call to the paid records source, with its estimated cost, so budgets and limits can be enforced.
+create table if not exists usage_events (
+  id bigserial primary key,
+  user_id uuid references profiles(user_id) on delete set null,
+  kind text not null,                           -- search | preview | lookup | coverage
+  job_id bigint,
+  records integer not null default 0,
+  cost_usd numeric(10,4) not null default 0,    -- estimate: $0.02 per export row, $0.05 per lookup, ~$0.005 per run otherwise
+  env text,                                     -- production | preview | development
+  created_at timestamptz not null default now()
+);
+create index if not exists usage_events_created_idx on usage_events (created_at desc);
+create index if not exists usage_events_user_day_idx on usage_events (user_id, kind, created_at desc);
 
 -- Spend atomically: fails (ok=false) instead of going negative.
 create or replace function spend_credits(p_user uuid, p_amount integer, p_reason text, p_ref text)

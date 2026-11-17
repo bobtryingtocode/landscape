@@ -60,7 +60,10 @@ Import this repo, then add these environment variables and redeploy:
 | `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_…` or `sk_test_…`) |
 | `STRIPE_WEBHOOK_SECRET` | From the webhook you create in step 4 (`whsec_…`) |
 | `APP_URL` | Your app's address, used for checkout return links |
-| `OWNER_EMAILS` | Your own email(s), comma separated — unlimited credits, no charge |
+| `OWNER_EMAILS` | Your own email(s), comma separated — unlimited credits, no charge, sees the Usage & limits panel |
+| `NATIONWIDE_ENABLED` | **Production only.** Must be `true` before nationwide search works on the live site. Preview deployments don't need it |
+| `APIFY_MONTHLY_BUDGET_USD` | Dollar cap on records-source spend per calendar month (required in production; preview defaults to $10) |
+| `APIFY_DAILY_BUDGET_USD` | Optional daily cap (default: a quarter of the monthly budget) |
 | `FREE_CREDITS` | Optional. Credits a brand-new account starts with (default 0) |
 
 ### 4. Stripe (payments)
@@ -70,6 +73,15 @@ Import this repo, then add these environment variables and redeploy:
 4. Settings → Billing → Customer portal: turn it on so "Manage subscription" works.
 
 Prices are created on the fly at checkout from the `PLANS` table, so there is nothing to set up in the Stripe dashboard beyond the webhook. Test with `sk_test_` keys and card `4242 4242 4242 4242` first.
+
+## Spending guardrails
+Four layers keep the records bill bounded:
+1. **Credits** — every record costs the user a credit; no credits, no search.
+2. **Per-plan limits** (`LIMITS` in `api/_lib.js`) — searches per day (free 3, starter 10, pro 20, max 40), previews per hour, owner lookups per day, and one running search per account.
+3. **Dollar budgets** — every paid call is logged in `usage_events` with its estimated cost; new calls stop when the month's or day's budget would be exceeded, and the owner gets an email at 80% and 100%.
+4. **Apify's own limit** — set a monthly spending limit in Apify Console → Settings → Limits as the backstop nothing in this code can override.
+
+Production is off by default: nationwide search only runs on the live site once `NATIONWIDE_ENABLED=true` and a monthly budget are set. Preview deployments (any non-`main` branch, e.g. `dev`) run with the small default budget, which is how to test with a real token safely. The owner sees spend, budget and per-user usage in the app's **Usage & limits** card.
 
 ## Sign-in
 No passwords. A user enters their email, gets a 6-digit code (10-minute life, 5 tries), and the app keeps a 90-day session. Sessions are revoked by "Sign out" or by deleting rows from `sessions`.
