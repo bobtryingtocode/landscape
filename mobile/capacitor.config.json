@@ -1,0 +1,15 @@
+{
+  "appId": "com.revvy.landscape",
+  "appName": "Landscape",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f4f1ea",
+    "preferredContentMode": "mobile",
+    "scheme": "Landscape"
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#f4f1ea", "launchAutoHide": true },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#f4f1ea" }
+  }
+}
